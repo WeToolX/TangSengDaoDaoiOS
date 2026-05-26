@@ -19,6 +19,7 @@
 // player
 @property(nonatomic, strong) AVPlayer *player;
 @property(nonatomic, strong) AVPlayerLayer *playerLayer;
+@property(nonatomic, strong) id playbackObserver;
 
 @property(nonatomic,strong) WKMessageFileDownloadTask *dowloadTask; // 下载任务
 
@@ -37,23 +38,23 @@
 }
 
 - (void)prepareForReuse {
-    if(self.player) {
-        [self.player pause];
-        self.player = nil;
+    [self resetPlayer];
+    if(self.coverImgView.superview != self.contentView) {
+        [self.contentView addSubview:self.coverImgView];
     }
-    if(self.playerLayer) {
-        [self.playerLayer removeFromSuperlayer];
-        self.playerLayer = nil;
-    }
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-      name:AVPlayerItemDidPlayToEndTimeNotification
-    object:nil];
+    self.coverImgView.hidden = NO;
+    self.progressView.hidden = NO;
+    [self.progressView setProgress:0];
     [super prepareForReuse];
 }
 
 - (void)layoutSubviews {
     [super layoutSubviews];
     self.progressView.frame = self.bounds;
+    if(self.playerLayer) {
+        self.playerLayer.frame = self.contentView.bounds;
+        self.playerLayer.position = CGPointMake(CGRectGetMidX(self.contentView.bounds), CGRectGetMidY(self.contentView.bounds));
+    }
     
 }
 
@@ -69,6 +70,11 @@
     WKVideoBrowserData *videoData = (WKVideoBrowserData*)yb_cellData;
     __weak typeof(videoData) weakSelfVideoData = videoData;
     if(videoData.coverImage) {
+        if(self.coverImgView.superview != self.contentView) {
+            [self.contentView addSubview:self.coverImgView];
+        }
+        [self.contentView bringSubviewToFront:self.progressView];
+        self.coverImgView.hidden = NO;
         self.coverImgView.image = videoData.coverImage;
         
         self.coverImgView.lim_size =  [self calCoverSize:videoData.coverImage];
@@ -123,6 +129,7 @@
 }
 
 -(void) playVideo:(NSString*)videoURL {
+    [self resetPlayer];
     AVPlayerItem *item = [AVPlayerItem playerItemWithURL:[NSURL fileURLWithPath:[NSString stringWithFormat:@"%@",videoURL]]];
     self.player = [[AVPlayer alloc] initWithPlayerItem:item];
     self.playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
@@ -134,20 +141,27 @@
     [self.playerLayer setNeedsDisplay];
     [self.player play];
     __weak typeof(self) weakSelf = self;
-    [[NSNotificationCenter defaultCenter] addObserverForName:AVPlayerItemDidPlayToEndTimeNotification
-        object:nil
-         queue:nil
+    self.playbackObserver = [[NSNotificationCenter defaultCenter] addObserverForName:AVPlayerItemDidPlayToEndTimeNotification
+        object:item
+         queue:NSOperationQueue.mainQueue
     usingBlock:^(NSNotification *note) {
           [weakSelf.player seekToTime:kCMTimeZero];
           [weakSelf.player play];
     }];
-    // 移除封面图
-    [self.coverImgView removeFromSuperview];
+    self.coverImgView.hidden = YES;
 }
 
 -(void) dealloc {
     if(self.dowloadTask) {
         [self.dowloadTask removeListener:self];
+    }
+    [self resetPlayer];
+}
+
+- (void)resetPlayer {
+    if(self.playbackObserver) {
+        [[NSNotificationCenter defaultCenter] removeObserver:self.playbackObserver];
+        self.playbackObserver = nil;
     }
     if(self.player) {
         [self.player pause];
@@ -157,9 +171,6 @@
         [self.playerLayer removeFromSuperlayer];
         self.playerLayer = nil;
     }
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-      name:AVPlayerItemDidPlayToEndTimeNotification
-    object:nil];
 }
 
 #pragma mark - touch

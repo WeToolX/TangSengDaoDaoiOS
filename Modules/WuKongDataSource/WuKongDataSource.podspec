@@ -28,9 +28,9 @@ TODO: Add long description of the pod here.
   s.source           = { :git => 'https://github.com/tangtaoit/WuKongDataSource.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '12.0'
+  s.ios.deployment_target = '15.0'
 
-  s.source_files = 'WuKongDataSource/Classes/**/*'
+  s.source_files = 'WuKongDataSource/Classes/**/*.{h,m,mm,c,cc,cpp,swift}'
   s.resources = ['WuKongDataSource/Assets/Lang']
   # s.resource_bundles = {
   #   'WuKongDataSource' => ['WuKongDataSource/Assets/*.png']

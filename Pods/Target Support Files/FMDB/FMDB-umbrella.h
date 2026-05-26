@@ -10,12 +10,12 @@
 #endif
 #endif
 
-#import "FMDatabase.h"
-#import "FMDatabaseAdditions.h"
-#import "FMDatabasePool.h"
-#import "FMDatabaseQueue.h"
-#import "FMDB.h"
-#import "FMResultSet.h"
+#import <fmdb/FMDatabase.h>
+#import <fmdb/FMDatabaseAdditions.h>
+#import <fmdb/FMDatabasePool.h>
+#import <fmdb/FMDatabaseQueue.h>
+#import <fmdb/FMDB.h>
+#import <fmdb/FMResultSet.h>
 
 FOUNDATION_EXPORT double FMDBVersionNumber;
 FOUNDATION_EXPORT const unsigned char FMDBVersionString[];

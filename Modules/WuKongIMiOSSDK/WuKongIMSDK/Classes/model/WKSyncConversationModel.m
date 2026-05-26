@@ -92,6 +92,13 @@
     cmdModel.no = cmdMessage.clientMsgNo;
     cmdModel.cmd = cmdMessage.cmd;
     cmdModel.timestamp = cmdMessage.timestamp;
+    if(cmdMessage.param.length > 0) {
+        NSData *data = [cmdMessage.param dataUsingEncoding:NSUTF8StringEncoding];
+        NSDictionary *param = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:nil];
+        if([param isKindOfClass:NSDictionary.class]) {
+            cmdModel.param = param;
+        }
+    }
     return cmdModel;
 }
 

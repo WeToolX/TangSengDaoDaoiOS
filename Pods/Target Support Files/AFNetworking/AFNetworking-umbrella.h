@@ -10,24 +10,24 @@
 #endif
 #endif
 
-#import "AFNetworking.h"
-#import "AFHTTPSessionManager.h"
-#import "AFURLSessionManager.h"
-#import "AFCompatibilityMacros.h"
-#import "AFNetworkReachabilityManager.h"
-#import "AFSecurityPolicy.h"
-#import "AFURLRequestSerialization.h"
-#import "AFURLResponseSerialization.h"
-#import "AFAutoPurgingImageCache.h"
-#import "AFImageDownloader.h"
-#import "AFNetworkActivityIndicatorManager.h"
-#import "UIActivityIndicatorView+AFNetworking.h"
-#import "UIButton+AFNetworking.h"
-#import "UIImageView+AFNetworking.h"
-#import "UIKit+AFNetworking.h"
-#import "UIProgressView+AFNetworking.h"
-#import "UIRefreshControl+AFNetworking.h"
-#import "WKWebView+AFNetworking.h"
+#import <AFNetworking/AFNetworking.h>
+#import <AFNetworking/AFHTTPSessionManager.h>
+#import <AFNetworking/AFURLSessionManager.h>
+#import <AFNetworking/AFCompatibilityMacros.h>
+#import <AFNetworking/AFNetworkReachabilityManager.h>
+#import <AFNetworking/AFSecurityPolicy.h>
+#import <AFNetworking/AFURLRequestSerialization.h>
+#import <AFNetworking/AFURLResponseSerialization.h>
+#import <AFNetworking/AFAutoPurgingImageCache.h>
+#import <AFNetworking/AFImageDownloader.h>
+#import <AFNetworking/AFNetworkActivityIndicatorManager.h>
+#import <AFNetworking/UIActivityIndicatorView+AFNetworking.h>
+#import <AFNetworking/UIButton+AFNetworking.h>
+#import <AFNetworking/UIImageView+AFNetworking.h>
+#import <AFNetworking/UIKit+AFNetworking.h>
+#import <AFNetworking/UIProgressView+AFNetworking.h>
+#import <AFNetworking/UIRefreshControl+AFNetworking.h>
+#import <AFNetworking/WKWebView+AFNetworking.h>
 
 FOUNDATION_EXPORT double AFNetworkingVersionNumber;
 FOUNDATION_EXPORT const unsigned char AFNetworkingVersionString[];

@@ -576,3 +576,7 @@
 "文件"="File";
 "图片/视频"="Images/Videos";
 "[系统消息]" = "[System Message]";
+"双向删除" = "Delete for Everyone";
+"确认双向删除该消息？" = "Delete this message for everyone?";
+"双向删除失败" = "Delete for everyone failed";
+"两次密码输入不一致" = "The two password entries are not consistent";

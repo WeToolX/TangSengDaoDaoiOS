@@ -12,6 +12,7 @@
 #import "WKTimeHeaderView.h"
 #import "WKMessageRevokeCell.h"
 #import "WKHistorySplitTipContent.h"
+#import "WKRTCMessageContent.h"
 #import "WKTypingManager.h"
 #import "WKMessageListView+Position.h"
 #import "WKConversationListVM.h"
@@ -1006,7 +1007,7 @@
     if(message.contentType == WK_CMD) { // 命令类消息不处理
         return false;
     }
-    if(message.contentType == WK_VIDEOCALL_DATA) { // 音视频数据传输类的消息不处理
+    if(message.contentType == WK_VIDEOCALL_DATA && ![message.content isKindOfClass:WKRTCMessageContent.class]) { // 音视频控制数据不进入会话消息列表，通话记录需要展示
         return false;
     }
    

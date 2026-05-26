@@ -139,6 +139,32 @@
     }];
 }
 
+-(AnyPromise*) GETRaw:(NSString*)path parameters:(nullable id)parameters {
+    NSString *requestPath = path;
+    if(_config.requestPathReplace) {
+        requestPath = _config.requestPathReplace(path);
+    }
+    [self logRequestStart:requestPath params:parameters method:@"GET"];
+    __weak typeof(self) weakSelf = self;
+    return [AnyPromise promiseWithResolverBlock:^(PMKResolver resolve) {
+        [weakSelf resetPublicHeader];
+        NSURLSessionDataTask *task = [weakSelf.sessionManager GET:requestPath parameters:parameters headers:nil progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+            [weakSelf logRequestEnd:task response:responseObject];
+            resolve(PMKManifold(responseObject,task));
+        } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+            NSError *er;
+            if(weakSelf.config.errorHandler){
+                er = weakSelf.config.errorHandler(nil,error);
+            }
+            if(!er) {
+                er = error;
+            }
+            resolve(er);
+        }];
+        [task resume];
+    }];
+}
+
 -(NSString*) pathURLEncode:(NSString*)path {
     return [path stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
 }

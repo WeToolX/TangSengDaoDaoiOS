@@ -128,11 +128,14 @@ static WKMoreItemClickEvent *_instance;
                         if(handleCount == 0) {
                             [topView hideHud];
                         }
-                        NSURL *videoURL = [NSURL URLWithString:filePath];
-                        NSData *videoData = [NSData dataWithContentsOfURL:videoURL];
+                        NSString *videoPath = filePath;
+                        if ([videoPath hasPrefix:@"file://"]) {
+                            videoPath = [NSURL URLWithString:videoPath].path;
+                        }
+                        NSURL *videoURL = [NSURL fileURLWithPath:videoPath ?: @""];
                         UIImage *preVidewImage = [weakSelf getVideoPreViewImage:videoURL];
                         NSData *preData = UIImageJPEGRepresentation(preVidewImage, 0.8f);
-                        if(!preData || !videoData) {
+                        if(!preData || videoPath.length == 0) {
                             return;
                         }
                         AVURLAsset *asset = [[AVURLAsset alloc] initWithURL:videoURL options:nil];
@@ -141,12 +144,12 @@ static WKMoreItemClickEvent *_instance;
                         }
                         long long second = asset.duration.value/asset.duration.timescale;
                         dispatch_async(dispatch_get_main_queue(), ^{
-                            [[WKApp shared] invoke:WKPOINT_SEND_VIDEO param:@{
-                                @"cover_data":preData,
-                                @"video_data":videoData,
-                                @"context": context,
-                                @"second":@(second),
-                            }];
+	                            [[WKApp shared] invoke:WKPOINT_SEND_VIDEO param:@{
+	                                @"cover_data":preData,
+	                                @"video_path":videoPath,
+	                                @"context": context,
+	                                @"second":@(second),
+	                            }];
                         });
                     }];
                 }else {
@@ -176,6 +179,10 @@ static WKMoreItemClickEvent *_instance;
     NSError *error = nil;
     CMTime actualTime;
     CGImageRef image = [assetGen copyCGImageAtTime:time actualTime:&actualTime error:&error];
+    if(image == NULL) {
+        WKLogError(@"get video preview image fail: %@", error);
+        return nil;
+    }
     UIImage *videoImage = [[UIImage alloc] initWithCGImage:image];
     CGImageRelease(image);
     return videoImage;

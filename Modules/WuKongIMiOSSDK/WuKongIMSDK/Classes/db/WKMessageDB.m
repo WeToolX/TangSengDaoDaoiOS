@@ -12,6 +12,26 @@
 #import "WKMessageExtraDB.h"
 #import "WKReactionDB.h"
 #import "WKUnknownContent.h"
+
+static const NSInteger WKMessageDBRTCCallContentType = 9994;
+
+static NSInteger WKMessageDBNormalizeContentType(NSInteger contentType, NSData *contentData) {
+    if(![contentData isKindOfClass:NSData.class] || contentData.length == 0) {
+        return contentType;
+    }
+    NSDictionary *contentDict = [NSJSONSerialization JSONObjectWithData:contentData options:kNilOptions error:nil];
+    if(![contentDict isKindOfClass:NSDictionary.class]) {
+        return contentType;
+    }
+    id rawType = contentDict[@"type"];
+    if([rawType isKindOfClass:NSString.class]) {
+        NSString *typeText = (NSString *)rawType;
+        if([typeText isEqualToString:@"rtc_notice"] || [typeText isEqualToString:@"rtc_record"]) {
+            return WKMessageDBRTCCallContentType;
+        }
+    }
+    return contentType;
+}
 // 保存消息
 #define SQL_MESSAGE_SAVE [NSString stringWithFormat:@"insert into %@(message_id,message_seq,order_seq,client_msg_no,stream_no,timestamp,from_uid,to_uid,channel_id,channel_type,content_type,content,searchable_word,voice_readed,status,reason_code,extra,setting,flame,flame_second,viewed,viewed_at,expire,expire_at,is_deleted) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",TB_MESSAGE]
 
@@ -1059,6 +1079,9 @@ static WKMessageDB *_instance;
     }
     
     NSInteger contentType = [dict[@"content_type"] integerValue];
+    if(dict[@"content"] && [dict[@"content"] isKindOfClass:[NSData class]]) {
+        contentType = WKMessageDBNormalizeContentType(contentType, dict[@"content"]);
+    }
     message.contentType = contentType;
     if(dict[@"content"] && [dict[@"content"] isKindOfClass:[NSData class]]) {
         message.content = [self decodeContent:contentType data:dict[@"content"] db:db];
@@ -1161,6 +1184,7 @@ static WKMessageDB *_instance;
 //    if([WKSDK shared].options.mosConvertOn) {
 //        contentType = [[WKMOSContentConvertManager shared] convertTypeToLM:contentType];
 //    }
+    contentType = WKMessageDBNormalizeContentType(contentType, contentData);
      Class contentCls = [[WKSDK shared] getMessageContent:contentType];
     WKMessageContent *messageContent = [contentCls new];
     [messageContent decode:contentData db:db];

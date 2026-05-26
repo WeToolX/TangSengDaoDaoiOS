@@ -10,6 +10,7 @@
 #import "WKGrantLoginVC.h"
 #import "WKThirdLoginVC.h"
 #import "WKLoginSettingVC.h"
+#import "WKForgetPasswordVC.h"
 @WKModule(WKLoginModule)
 @implementation WKLoginModule
 
@@ -27,6 +28,11 @@
          WKLoginVC *loginVC = [WKLoginVC new]; // 手机号登录UI
 //        WKThirdLoginVC *loginVC = [WKThirdLoginVC new]; // 第三方授权登录UI
         [[WKNavigationManager shared] resetRootViewController:loginVC];
+        return nil;
+    }];
+    
+    [self setMethod:WKPOINT_LOGIN_RESET_PASSWORD handler:^id _Nullable(id  _Nonnull param) {
+        [[WKNavigationManager shared] pushViewController:[WKForgetPasswordVC new] animated:YES];
         return nil;
     }];
     

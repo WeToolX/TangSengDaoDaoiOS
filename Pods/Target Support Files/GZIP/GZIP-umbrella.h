@@ -10,8 +10,8 @@
 #endif
 #endif
 
-#import "GZIP.h"
-#import "NSData+GZIP.h"
+#import <GZIP/GZIP.h>
+#import <GZIP/NSData+GZIP.h>
 
 FOUNDATION_EXPORT double GZIPVersionNumber;
 FOUNDATION_EXPORT const unsigned char GZIPVersionString[];

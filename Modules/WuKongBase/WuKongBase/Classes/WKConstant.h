@@ -23,6 +23,8 @@
 #define WKPOINT_LOGIN_CLEARLOGININFO @"login.clearLoginInfo"
 // 退出登录
 #define WKPOINT_LOGIN_LOGOUT @"login.logout"
+// 修改登录密码页面
+#define WKPOINT_LOGIN_RESET_PASSWORD @"login.reset.password"
 
 // ---------- 聊天相关 ----------
 // 显示聊天界面
@@ -135,6 +137,8 @@
 #define WKPOINT_CATEGORY_PANELFUNCITEM_VOICE @"panel.func.item.voice"
 // image
 #define WKPOINT_CATEGORY_PANELFUNCITEM_IMAGE @"panel.func.item.image"
+// small video
+#define WKPOINT_CATEGORY_PANELFUNCITEM_VIDEO @"panel.func.item.video"
 // camera
 #define WKPOINT_CATEGORY_PANELFUNCITEM_CAMERA @"panel.func.item.camera"
 // camera
@@ -256,8 +260,6 @@
 
 // 同步数据
 #define WKPOINT_CATEGORY_SYNC @"sync"
-// 视频通话支持的方法
-#define WKPOINT_VIDEOCALL_SUPPORT_FNC @"videocall.support.fnc"
 // 同步联系人
 #define WKPOINT_SYNC_CONTACTS @"sync.contacts"
 // 同步违禁词
@@ -374,14 +376,6 @@ typedef enum : NSUInteger {
     WKHistoryMessageSearchTypeConversation, // 搜索最近会话
 } WKHistoryMessageSearchType;
 
-// 呼叫类型
-typedef enum : NSUInteger {
-    WKCallTypeAudio = 0, // 语音呼叫
-    WKCallTypeVideo, // 视频呼叫
-    WKCallTypeAll,
-} WKCallType;
-
-
 typedef enum : uint8_t {
     WK_CustomerService = 3, // 客服
     WK_Community = 4 // 社区
@@ -416,7 +410,6 @@ typedef void(^WKOnClick)(void);
 
 
 // cmd命令集合
-static NSString *WKCMDVideoCall = @"videoCall"; // 音视频呼叫
 static NSString *WKCMDMemberUpdate = @"memberUpdate"; //群成员更新
 static NSString *WKCMDUnreadClear = @"unreadClear"; // 清除频道未读数
 static NSString *WKCMDGroupAvatarUpdate = @"groupAvatarUpdate"; // 群头像更新
@@ -431,20 +424,6 @@ static NSString *WKCMDSyncMessageReaction = @"syncMessageReaction"; // 同步消
 static NSString *WKCMDMessageEerase = @"messageEerase"; // 擦除消息
 static NSString *WKCMDSyncReminders = @"syncReminders"; // 同步提醒项
 static NSString *WKCMDSyncConversationExtra = @"syncConversationExtra"; // 同步最近会话扩展
-
-
-//RTC
-static NSString *WKCMDRTCRoomInvoke = @"room.invoke"; // RTC 房间邀请
-static NSString *WKCMDRTCRoomHangup = @"room.hangup"; // RTC 挂断
-static NSString *WKCMDRTCRoomRefuse = @"room.refuse"; // RTC 拒绝加入房间
-
-static NSString *WKCMDRTCP2PInvoke = @"rtc.p2p.invoke"; // RTC 邀请
-static NSString *WKCMDRTCP2PAccept = @"rtc.p2p.accept"; // RTC 接受
-static NSString *WKCMDRTCP2PRefuse = @"rtc.p2p.refuse"; // RTC 拒绝
-static NSString *WKCMDRTCP2PCancel = @"rtc.p2p.cancel"; // RTC 取消
-static NSString *WKCMDRTCP2PHangup = @"rtc.p2p.hangup"; // RTC 挂断
-
-typedef void(^videoCallSupportInvoke)(WKChannel *channel,WKCallType callType); // 视频调用方法
 
 
 // 群类型

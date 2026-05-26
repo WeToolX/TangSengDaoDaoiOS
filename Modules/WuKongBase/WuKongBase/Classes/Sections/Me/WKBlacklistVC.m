@@ -32,20 +32,19 @@
 -(void) requestData {
     self.items = [NSMutableArray array];
     self.sectionTitleArr = @[];
-    // 查询黑名单的频道数据
-    NSArray<WKChannelInfo*> *blacklist = [[WKChannelInfoDB shared] queryChannelInfosWithStatus:WKChannelStatusBlacklist];
-    NSMutableArray *items = [NSMutableArray array];
-    if(blacklist) {
-        for (WKChannelInfo *channelInfo in blacklist) {
-            WKBlacklistModel *model = [[WKBlacklistModel alloc] init];
-            model.name = channelInfo.name;
-            model.uid = channelInfo.channel.channelId;
-            [items addObject:model];
+    __weak typeof(self) weakSelf = self;
+    [self.view showHUD];
+    [[WKAPIClient sharedClient] GET:@"user/blacklists" parameters:nil model:WKBlacklistModel.class].then(^(NSArray<WKBlacklistModel*> *blacklist){
+        [weakSelf.view hideHud];
+        if(blacklist.count > 0) {
+            [weakSelf sortAndGroup:blacklist];
+        }else {
+            [weakSelf.tableView reloadData];
         }
-    }
-    if(items.count>0) {
-        [self sortAndGroup:items];
-    }
+    }).catch(^(NSError *error){
+        [weakSelf.view hideHud];
+        [weakSelf.view showHUDWithHide:error.domain];
+    });
 }
 
 // 联系人排序和分组
@@ -95,7 +94,7 @@
     return cell;
 }
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
-    return  60.0;
+    return  80.0;
 }
 
 -(CGFloat) tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {

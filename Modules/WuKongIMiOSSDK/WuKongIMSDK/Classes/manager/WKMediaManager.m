@@ -231,7 +231,7 @@ static WKMediaManager *_instance;
     return [_avAudioPlayer isPlaying];
 }
 
--(void) playAudio:(NSString *)filePath playerDidFinish:(WKAudioPlayerDidFinishBlock)finishBlock progress:(WKAudioPlayerDidProgressBlock)progressBlock{
+-(BOOL) playAudio:(NSString *)filePath playerDidFinish:(WKAudioPlayerDidFinishBlock)finishBlock progress:(WKAudioPlayerDidProgressBlock)progressBlock{
     //初始化音频类 并且添加播放文件
     _playerDidFinishBlock=finishBlock;
     _playerDidProgressBlock = progressBlock;
@@ -243,7 +243,10 @@ static WKMediaManager *_instance;
     _avAudioPlayer = [[AVAudioPlayer alloc] initWithContentsOfURL:[NSURL fileURLWithPath:filePath] error:&error];
     if(error) {
         NSLog(@"音频文件错误！->%@",error);
-        return;
+        if(_playerDidFinishBlock) {
+            _playerDidFinishBlock(nil,NO);
+        }
+        return NO;
     }
     _avAudioPlayer.meteringEnabled = YES;
     
@@ -264,7 +267,18 @@ static WKMediaManager *_instance;
     //预播放
     [_avAudioPlayer prepareToPlay];
     //播放
-    [_avAudioPlayer play];
+    BOOL played = [_avAudioPlayer play];
+    if(!played) {
+        if(self.playProgressTimer) {
+            [self.playProgressTimer invalidate];
+            self.playProgressTimer = nil;
+        }
+        [self handleNotification:NO];
+        if(_playerDidFinishBlock) {
+            _playerDidFinishBlock(_avAudioPlayer,NO);
+        }
+    }
+    return played;
 }
 
 -(void) updatePlayProgress {
@@ -328,6 +342,17 @@ static WKMediaManager *_instance;
         _playerDidFinishBlock(player,flag);
     }
     
+}
+
+- (void)audioPlayerDecodeErrorDidOccur:(AVAudioPlayer *)player error:(NSError *)error {
+    if(self.playProgressTimer) {
+        [self.playProgressTimer invalidate];
+        self.playProgressTimer = nil;
+    }
+    [self handleNotification:NO];
+    if(_playerDidFinishBlock){
+        _playerDidFinishBlock(player,NO);
+    }
 }
 
 #pragma mark - 声明委托

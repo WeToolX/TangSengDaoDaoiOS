@@ -10,13 +10,13 @@
 #endif
 #endif
 
-#import "WKChannelDataManagerDelegateImp.h"
-#import "WKDataSourceModel.h"
-#import "WKDataSourceModule.h"
-#import "WKFileDownloadTask.h"
-#import "WKFileUploadTask.h"
-#import "WKGroupManagerDelegateImp.h"
-#import "WKMessageManagerDelegateImp.h"
+#import <WuKongDataSource/WKChannelDataManagerDelegateImp.h>
+#import <WuKongDataSource/WKDataSourceModel.h>
+#import <WuKongDataSource/WKDataSourceModule.h>
+#import <WuKongDataSource/WKFileDownloadTask.h>
+#import <WuKongDataSource/WKFileUploadTask.h>
+#import <WuKongDataSource/WKGroupManagerDelegateImp.h>
+#import <WuKongDataSource/WKMessageManagerDelegateImp.h>
 
 FOUNDATION_EXPORT double WuKongDataSourceVersionNumber;
 FOUNDATION_EXPORT const unsigned char WuKongDataSourceVersionString[];

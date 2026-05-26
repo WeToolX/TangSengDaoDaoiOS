@@ -131,6 +131,8 @@
 #import "WKSchemaManager.h"
 
 #import "WKPanelDefaultFuncItem.h"
+#import "WKFileContent.h"
+#import "WKSmallVideoContent.h"
 #import "WKDowloadTask.h"
 #import "WKGenerateImageUtils.h"
 
@@ -139,6 +141,15 @@
 
 #import "WKMemberListVC.h"
 #import "WKOnlineStatusManager.h"
+
+// RTC 音视频通话
+#import "WKRTCModels.h"
+#import "WKRTCAPI.h"
+#import "WKRTCSessionManager.h"
+#import "WKRTCMediaAdapter.h"
+#import "WKRTCAudioRouteManager.h"
+#import "WKRTCCallKitManager.h"
+#import "WKRTCCallViewController.h"
 
 #import "WKConversationVC.h"
 #import "WKConversationView.h"

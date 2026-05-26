@@ -10,7 +10,7 @@
 #endif
 #endif
 
-#import "ZLImageEditor.h"
+#import <ZLImageEditor/ZLImageEditor.h>
 
 FOUNDATION_EXPORT double ZLImageEditorVersionNumber;
 FOUNDATION_EXPORT const unsigned char ZLImageEditorVersionString[];

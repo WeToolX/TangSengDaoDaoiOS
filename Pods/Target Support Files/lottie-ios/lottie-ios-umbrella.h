@@ -10,20 +10,20 @@
 #endif
 #endif
 
-#import "LOTAnimatedControl.h"
-#import "LOTAnimatedSwitch.h"
-#import "LOTAnimationCache.h"
-#import "LOTAnimationTransitionController.h"
-#import "LOTAnimationView.h"
-#import "LOTAnimationView_Compat.h"
-#import "LOTBlockCallback.h"
-#import "LOTCacheProvider.h"
-#import "LOTComposition.h"
-#import "LOTInterpolatorCallback.h"
-#import "LOTKeypath.h"
-#import "Lottie.h"
-#import "LOTValueCallback.h"
-#import "LOTValueDelegate.h"
+#import <Lottie/LOTAnimatedControl.h>
+#import <Lottie/LOTAnimatedSwitch.h>
+#import <Lottie/LOTAnimationCache.h>
+#import <Lottie/LOTAnimationTransitionController.h>
+#import <Lottie/LOTAnimationView.h>
+#import <Lottie/LOTAnimationView_Compat.h>
+#import <Lottie/LOTBlockCallback.h>
+#import <Lottie/LOTCacheProvider.h>
+#import <Lottie/LOTComposition.h>
+#import <Lottie/LOTInterpolatorCallback.h>
+#import <Lottie/LOTKeypath.h>
+#import <Lottie/Lottie.h>
+#import <Lottie/LOTValueCallback.h>
+#import <Lottie/LOTValueDelegate.h>
 
 FOUNDATION_EXPORT double LottieVersionNumber;
 FOUNDATION_EXPORT const unsigned char LottieVersionString[];

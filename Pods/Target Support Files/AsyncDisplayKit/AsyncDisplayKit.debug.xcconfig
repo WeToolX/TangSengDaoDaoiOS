@@ -3,7 +3,7 @@ CONFIGURATION_BUILD_DIR = ${PODS_CONFIGURATION_BUILD_DIR}/AsyncDisplayKit
 DEFINES_MODULE = YES
 EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64
 GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1 $(inherited) MINIMAL_ASDK=1
-OTHER_LDFLAGS = $(inherited) -l"c++" -framework "CoreGraphics" -framework "CoreMedia" -framework "CoreText" -framework "Foundation" -framework "QuartzCore" -framework "UIKit"
+OTHER_LDFLAGS = $(inherited) -framework CoreGraphics -framework CoreMedia -framework CoreText -framework Foundation -framework QuartzCore -framework UIKit -Xlinker -no_warn_duplicate_libraries
 PODS_BUILD_DIR = ${BUILD_DIR}
 PODS_CONFIGURATION_BUILD_DIR = ${PODS_BUILD_DIR}/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)
 PODS_DEVELOPMENT_LANGUAGE = ${DEVELOPMENT_LANGUAGE}

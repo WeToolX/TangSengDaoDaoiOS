@@ -10,7 +10,7 @@
 #endif
 #endif
 
-#import "Aspects.h"
+#import <Aspects/Aspects.h>
 
 FOUNDATION_EXPORT double AspectsVersionNumber;
 FOUNDATION_EXPORT const unsigned char AspectsVersionString[];

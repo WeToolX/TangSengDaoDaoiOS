@@ -10,26 +10,26 @@
 #endif
 #endif
 
-#import "WKLoginService.h"
-#import "WKAuthWebViewVC.h"
-#import "WKCountrySelectVC.h"
-#import "WKForgetPasswordVC.h"
-#import "WKForgetPasswordVM.h"
-#import "WKGrantLoginVC.h"
-#import "WKGrantLoginVM.h"
-#import "WKLoginPhoneCheckStartVC.h"
-#import "WKLoginPhoneCheckVC.h"
-#import "WKLoginPhoneCheckVM.h"
-#import "WKLoginSettingVC.h"
-#import "WKLoginVC.h"
-#import "WKLoginView.h"
-#import "WKLoginVM.h"
-#import "WKRegisterNextVC.h"
-#import "WKRegisterVC.h"
-#import "WKRegisterVM.h"
-#import "WKThirdLoginVC.h"
-#import "NSString+PinYin.h"
-#import "WKLoginModule.h"
+#import <WuKongLogin/WKLoginService.h>
+#import <WuKongLogin/WKAuthWebViewVC.h>
+#import <WuKongLogin/WKCountrySelectVC.h>
+#import <WuKongLogin/WKForgetPasswordVC.h>
+#import <WuKongLogin/WKForgetPasswordVM.h>
+#import <WuKongLogin/WKGrantLoginVC.h>
+#import <WuKongLogin/WKGrantLoginVM.h>
+#import <WuKongLogin/WKLoginPhoneCheckStartVC.h>
+#import <WuKongLogin/WKLoginPhoneCheckVC.h>
+#import <WuKongLogin/WKLoginPhoneCheckVM.h>
+#import <WuKongLogin/WKLoginSettingVC.h>
+#import <WuKongLogin/WKLoginVC.h>
+#import <WuKongLogin/WKLoginView.h>
+#import <WuKongLogin/WKLoginVM.h>
+#import <WuKongLogin/WKRegisterNextVC.h>
+#import <WuKongLogin/WKRegisterVC.h>
+#import <WuKongLogin/WKRegisterVM.h>
+#import <WuKongLogin/WKThirdLoginVC.h>
+#import <WuKongLogin/NSString+PinYin.h>
+#import <WuKongLogin/WKLoginModule.h>
 
 FOUNDATION_EXPORT double WuKongLoginVersionNumber;
 FOUNDATION_EXPORT const unsigned char WuKongLoginVersionString[];

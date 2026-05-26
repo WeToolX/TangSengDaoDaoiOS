@@ -4,8 +4,8 @@
 
 #define UIColorRGBA(rgb,a) ([[UIColor alloc] initWithRed:(((rgb >> 16) & 0xff) / 255.0f) green:(((rgb >> 8) & 0xff) / 255.0f) blue:(((rgb) & 0xff) / 255.0f) alpha:a])
  
-CGSize aspectFillSize(CGSize size, CGSize bounds) {
-    CGFloat scale = MAX(bounds.width / MAX(1.0, size.width), bounds.height / MAX(1.0, size.height));
+CGSize aspectFitSize(CGSize size, CGSize bounds) {
+    CGFloat scale = MIN(bounds.width / MAX(1.0, size.width), bounds.height / MAX(1.0, size.height));
     return CGSizeMake(floor(size.width * scale), floor(size.height * scale));
 }
 
@@ -120,15 +120,15 @@ UIImage * _Nullable drawSvgImage(NSData * _Nonnull data, CGSize size, UIColor *b
     
     startTime = [NSDate date];
 
-    UIGraphicsBeginImageContextWithOptions(size, true, 1.0);
+    UIGraphicsBeginImageContextWithOptions(size, false, 0.0);
     CGContextRef context = UIGraphicsGetCurrentContext();
     CGContextSetFillColorWithColor(context, backgroundColor.CGColor);
     CGContextFillRect(context, CGRectMake(0.0f, 0.0f, size.width, size.height));
     
     CGSize svgSize = CGSizeMake(image->width, image->height);
-    CGSize drawingSize = aspectFillSize(svgSize, size);
+    CGSize drawingSize = aspectFitSize(svgSize, size);
     
-    CGFloat scale = MAX(size.width / MAX(1.0, svgSize.width), size.height / MAX(1.0, svgSize.height));
+    CGFloat scale = MIN(size.width / MAX(1.0, svgSize.width), size.height / MAX(1.0, svgSize.height));
     
     CGContextScaleCTM(context, scale, scale);
     CGContextTranslateCTM(context, (size.width - drawingSize.width) / 2.0, (size.height - drawingSize.height) / 2.0);

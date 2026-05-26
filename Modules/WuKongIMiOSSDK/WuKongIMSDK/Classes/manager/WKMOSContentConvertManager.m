@@ -273,70 +273,11 @@ static WKMOSContentConvertManager *_instance;
         case 11002:
             contentDic[@"invite_no"] = [contentDic[@"id"] stringValue];
             break;
-        case 9996: // 收到通话
-        case 9998: // 接受通话
-            contentDic[@"cmd"] = @"videoCall";
-            contentDic[@"param"] = @{@"extra":contentDic[@"extra"]?:@{},@"type":@(type)};
-            [contentDic removeObjectForKey:@"extra"];
-            break;
-        case 9995:
-        case 9997:
-        case 9999:
-            if(!contentDic[@"content"] || [contentDic[@"content"] isEqualToString:@""]) {
-                contentDic[@"content"] = [self getVideoCallContentDesc:contentDic];
-                contentDic[@"second"] = [self getVideoCallTime:contentDic];
-            }
-            break;
         default:
             break;
     }
 }
 
-
--(NSNumber*) getVideoCallTime:(NSDictionary*)contentDic {
-    NSNumber *time; // 通话时长
-    if([contentDic[@"extra"] isKindOfClass:[NSArray class]]) {
-        NSArray *extraArray = (NSArray*)contentDic[@"extra"];
-        if(extraArray.count>0) {
-            NSDictionary *data = extraArray[0];
-            time = data[@"time"];
-        }
-    }
-    return time?:@(0);
-}
-
-- (NSString *) getVideoCallContentDesc:(NSDictionary*)contentDic {
-    
-    NSString *content;
-    if([contentDic[@"extra"] isKindOfClass:[NSArray class]]) {
-        NSArray *extraArray = (NSArray*)contentDic[@"extra"];
-        if(extraArray.count>0) {
-            NSDictionary *data = extraArray[0];
-            content = data[@"content"];
-        }
-    }
-    NSInteger contentType = [contentDic[@"type"] integerValue];
-    if(!content  ||  [content isEqualToString:@""]) {
-        switch (contentType) {
-            case 9995:
-                content =  @"未接通";
-                break;
-            case 9996:
-                content =  @"已接通";
-                break;
-            case 9997:
-                content =  @"已拒绝";
-                break;
-            case 9999:
-                content =  @"已挂断";
-                break;
-            default:
-                content =  @"未知通话消息";
-                break;
-        }
-    }
-    return content;
-}
 // 转换正文属性
 -(void) convertContentPropToMOS:(NSMutableDictionary *)contentDic {
     NSInteger type = [contentDic[@"type"] integerValue];

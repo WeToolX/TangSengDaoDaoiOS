@@ -56,11 +56,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+@interface WKPanelVideoFuncItem : WKPanelDefaultFuncItem
+
+@end
+
 @interface WKPanelMoreFuncItem : WKPanelDefaultFuncItem
 
 @end
 
 @interface WKPanelCardFuncItem : WKPanelDefaultFuncItem
+
+@end
+
+@interface WKPanelFileFuncItem : WKPanelDefaultFuncItem
 
 @end
 

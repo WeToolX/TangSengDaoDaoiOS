@@ -345,11 +345,6 @@
         [self stopAllPlayingUI];
     }
    
-    // 更新消息为已读
-    if(!messageModel.voiceReaded) {
-        messageModel.voiceReaded = true;
-        [[WKMessageManager shared] updateMessageVoiceReaded:messageModel complete:nil];
-    }
     if(!needPause && messageModel.voicePlayStatus != WKVoicePlayStatusPlaying) {
         WKVoiceContent *voiceContent = (WKVoiceContent*)messageModel.content;
         if([[NSFileManager defaultManager] fileExistsAtPath:voiceContent.localPath]){ // 如果存在则播放，不存在则下载
@@ -378,7 +373,7 @@
     
     __weak typeof(self) weakSelf = self;
     WKVoiceContent *voiceContent = (WKVoiceContent*)messageModel.content;
-    [[WKSDK shared].mediaManager playAudio:voiceContent.localPath playerDidFinish:^(AVAudioPlayer *player,BOOL successFlag) {
+    BOOL played = [[WKSDK shared].mediaManager playAudio:voiceContent.localPath playerDidFinish:^(AVAudioPlayer *player,BOOL successFlag) {
         __strong typeof(self) strongSelf = weakSelf;
         [strongSelf resetPlayStatus:messageModel];
         [strongSelf.conversationContext refreshCell:messageModel];
@@ -391,6 +386,10 @@
         [weakSelf.conversationContext refreshCell:messageModel];
         
     }];
+    if(played && !messageModel.voiceReaded) {
+        messageModel.voiceReaded = true;
+        [[WKMessageManager shared] updateMessageVoiceReaded:messageModel complete:nil];
+    }
     
     messageModel.OnFlameFinished = ^{
         [[WKSDK shared].mediaManager stopAudioPlay];

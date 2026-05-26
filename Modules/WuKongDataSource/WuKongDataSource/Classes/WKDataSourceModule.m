@@ -201,6 +201,16 @@
     }];
 }
 
+- (NSString *)stringValue:(id)value {
+    if([value isKindOfClass:NSString.class]) {
+        return value;
+    }
+    if([value respondsToSelector:@selector(stringValue)]) {
+        return [value stringValue];
+    }
+    return @"";
+}
+
 -(void) setSyncChannelMessageProvider {
     
     [WKSDK.shared.chatManager setSyncChannelMessageProvider:^(WKChannel * _Nonnull channel, uint32_t startMessageSeq, uint32_t endMessageSeq, NSInteger limit, WKPullMode pullMode, WKSyncChannelMessageCallback  _Nonnull callback) {

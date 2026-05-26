@@ -27,17 +27,17 @@ Pod::Spec.new do |s|
   s.author           = { 'tangtaoit' => 'tt@tgo.ai' }
   s.source           = { :git => "https://github.com/WuKongIM/WuKongIMiOSSDK.git" }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
-  s.platform     = :ios, '11.0'
+  s.platform     = :ios, '15.0'
   s.requires_arc = true
   
-  s.ios.deployment_target = '11.0'
+  s.ios.deployment_target = '15.0'
   
   s.vendored_libraries = 'WuKongIMSDK/Classes/private/arm/lib/*.a'
   
   s.preserve_paths = 'WuKongIMSDK/Classes/private/arm/lib/*.a'
   s.libraries = 'opencore-amrnb', 'opencore-amrwb','vo-amrwbenc'
 
-  s.source_files = 'WuKongIMSDK/Classes/**/*'
+  s.source_files = 'WuKongIMSDK/Classes/**/*.{h,m,mm,c,cc,cpp,swift}'
   s.public_header_files =  'WuKongIMSDK/Classes/**/*.h'
   s.private_header_files = 'WuKongIMSDK/Classes/private/**/*.h'
   s.frameworks = 'UIKit', 'MapKit', 'Security'

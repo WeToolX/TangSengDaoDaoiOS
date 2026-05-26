@@ -10,9 +10,9 @@
 #endif
 #endif
 
-#import "SSZipArchive.h"
-#import "SSZipCommon.h"
-#import "ZipArchive.h"
+#import <SSZipArchive-library/SSZipArchive.h>
+#import <SSZipArchive-library/SSZipCommon.h>
+#import <SSZipArchive-library/ZipArchive.h>
 
 FOUNDATION_EXPORT double SSZipArchiveVersionNumber;
 FOUNDATION_EXPORT const unsigned char SSZipArchiveVersionString[];

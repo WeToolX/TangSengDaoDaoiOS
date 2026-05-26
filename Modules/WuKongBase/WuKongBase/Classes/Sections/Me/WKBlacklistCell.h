@@ -9,9 +9,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface WKBlacklistModel : NSObject
+@interface WKBlacklistModel : WKModel
 @property(nonatomic,copy) NSString *uid;
 @property(nonatomic,copy) NSString *name;
+@property(nonatomic,copy) NSString *username;
 
 @end
 

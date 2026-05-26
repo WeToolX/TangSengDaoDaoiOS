@@ -17,6 +17,7 @@
 #import "WKInputChangeTextRespondProto.h"
 #import "UIView+WK.h"
 #import "WKStickerManager.h"
+#import "WKStickerPackageContentView.h"
 
 
 @interface WKEmojiInputChangeTextRespondResult : NSObject<WKInputChangeRespondResult>
@@ -131,7 +132,7 @@
             [self.tabPageVIew addSubview:self.stickerStoreBtn];
         }
         
-        self.panelContentNewList = [[WKApp shared] invokes:WKPOINT_CATEGORY_PANELCONTENT param:nil];
+        self.panelContentNewList = [self panelContents];
         
         [[WKStickerManager shared] addDelegate:self];
         
@@ -198,11 +199,19 @@
     
     // 延迟一点执行 ，让WKPOINT_CATEGORY_PANELCONTENT注册完成
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        self.panelContentNewList = [[WKApp shared] invokes:WKPOINT_CATEGORY_PANELCONTENT param:nil];
+        self.panelContentNewList = [self panelContents];
         [self.tabPageVIew reloadTabPageView];
 
     });
    
+}
+
+-(NSArray<WKStickerContentView*>*)panelContents {
+    NSMutableArray *contents = [NSMutableArray arrayWithArray:[[WKApp shared] invokes:WKPOINT_CATEGORY_PANELCONTENT param:nil] ?: @[]];
+    for (WKStickerUserCategoryResp *category in [WKStickerManager shared].stickerUserCategoryResps ?: @[]) {
+        [contents addObject:[[WKStickerPackageContentView alloc] initWithCategory:category]];
+    }
+    return contents;
 }
 
 

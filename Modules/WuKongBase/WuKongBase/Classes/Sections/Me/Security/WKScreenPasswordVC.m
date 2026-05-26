@@ -109,6 +109,8 @@
         __weak typeof(_passwordView) weakPasswordView = _passwordView;
         [_passwordView setPasswordCompeleteBlock:^(NSString *password) {
             if([[WKScreenPasswordSetVM digestLockScreenPwd:password] isEqualToString:lockScreenPwd]) {
+                [WKApp shared].loginInfo.extra[@"lock_screen_try"] = @(0);
+                [[WKApp shared].loginInfo save];
                 if(weakSelf.onFinished) {
                     weakSelf.onFinished(password);
                 }
@@ -144,23 +146,7 @@
 }
 
 -(void) forgetPwdPressed {
-    
-    __weak typeof(self) weakSelf = self;
-    
-    UIAlertController* alertController = [UIAlertController alertControllerWithTitle:@"" message:LLang(@"确定后将会清除现有解锁密码，如需继续使用，请重新设置") preferredStyle:UIAlertControllerStyleAlert];
-    
-    // Create the actions.
-    UIAlertAction *action = [UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
-       
-    }];
-    [alertController addAction:action];
-     action = [UIAlertAction actionWithTitle:LLang(@"确认") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-         [weakSelf closeScreenPassword];
-        
-    }];
-    [alertController addAction:action];
-    
-    [self presentViewController:alertController animated:YES completion:nil];
+    [self closeScreenPassword];
 }
 
 -(void) closeScreenPassword {

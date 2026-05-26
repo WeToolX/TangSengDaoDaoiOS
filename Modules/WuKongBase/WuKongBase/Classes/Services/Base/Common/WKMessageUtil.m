@@ -17,7 +17,19 @@
     if(!payloadDict || ![payloadDict isKindOfClass:[NSDictionary class]]) {
         payloadDict = @{@"type":@(WK_UNKNOWN)};
     }
-    NSNumber *contentTpe = payloadDict[@"type"];
+    id rawContentType = payloadDict[@"type"];
+    NSNumber *contentTpe = nil;
+    if([rawContentType isKindOfClass:NSNumber.class]) {
+        contentTpe = rawContentType;
+    }else if([rawContentType isKindOfClass:NSString.class]) {
+        NSString *typeText = (NSString *)rawContentType;
+        // RTC 文档中持久消息 type 是 rtc_notice/rtc_record 字符串，这里映射到本地 RTC 消息类型。
+        if([typeText isEqualToString:@"rtc_notice"] || [typeText isEqualToString:@"rtc_record"]) {
+            contentTpe = @(WK_VIDEOCALL_DATA);
+        }else {
+            contentTpe = @([typeText integerValue]);
+        }
+    }
     if(!contentTpe) {
         contentTpe = @(WK_UNKNOWN);
     }

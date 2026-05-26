@@ -10,31 +10,31 @@
 #endif
 #endif
 
-#import "MJRefreshAutoFooter.h"
-#import "MJRefreshBackFooter.h"
-#import "MJRefreshComponent.h"
-#import "MJRefreshFooter.h"
-#import "MJRefreshHeader.h"
-#import "MJRefreshTrailer.h"
-#import "MJRefreshAutoGifFooter.h"
-#import "MJRefreshAutoNormalFooter.h"
-#import "MJRefreshAutoStateFooter.h"
-#import "MJRefreshBackGifFooter.h"
-#import "MJRefreshBackNormalFooter.h"
-#import "MJRefreshBackStateFooter.h"
-#import "MJRefreshGifHeader.h"
-#import "MJRefreshNormalHeader.h"
-#import "MJRefreshStateHeader.h"
-#import "MJRefreshNormalTrailer.h"
-#import "MJRefreshStateTrailer.h"
-#import "MJRefresh.h"
-#import "MJRefreshConfig.h"
-#import "MJRefreshConst.h"
-#import "NSBundle+MJRefresh.h"
-#import "UICollectionViewLayout+MJRefresh.h"
-#import "UIScrollView+MJExtension.h"
-#import "UIScrollView+MJRefresh.h"
-#import "UIView+MJExtension.h"
+#import <MJRefresh/MJRefreshAutoFooter.h>
+#import <MJRefresh/MJRefreshBackFooter.h>
+#import <MJRefresh/MJRefreshComponent.h>
+#import <MJRefresh/MJRefreshFooter.h>
+#import <MJRefresh/MJRefreshHeader.h>
+#import <MJRefresh/MJRefreshTrailer.h>
+#import <MJRefresh/MJRefreshAutoGifFooter.h>
+#import <MJRefresh/MJRefreshAutoNormalFooter.h>
+#import <MJRefresh/MJRefreshAutoStateFooter.h>
+#import <MJRefresh/MJRefreshBackGifFooter.h>
+#import <MJRefresh/MJRefreshBackNormalFooter.h>
+#import <MJRefresh/MJRefreshBackStateFooter.h>
+#import <MJRefresh/MJRefreshGifHeader.h>
+#import <MJRefresh/MJRefreshNormalHeader.h>
+#import <MJRefresh/MJRefreshStateHeader.h>
+#import <MJRefresh/MJRefreshNormalTrailer.h>
+#import <MJRefresh/MJRefreshStateTrailer.h>
+#import <MJRefresh/MJRefresh.h>
+#import <MJRefresh/MJRefreshConfig.h>
+#import <MJRefresh/MJRefreshConst.h>
+#import <MJRefresh/NSBundle+MJRefresh.h>
+#import <MJRefresh/UICollectionViewLayout+MJRefresh.h>
+#import <MJRefresh/UIScrollView+MJExtension.h>
+#import <MJRefresh/UIScrollView+MJRefresh.h>
+#import <MJRefresh/UIView+MJExtension.h>
 
 FOUNDATION_EXPORT double MJRefreshVersionNumber;
 FOUNDATION_EXPORT const unsigned char MJRefreshVersionString[];

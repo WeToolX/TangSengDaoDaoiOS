@@ -10,9 +10,9 @@
 #endif
 #endif
 
-#import "Curve25519.h"
-#import "Ed25519.h"
-#import "Randomness.h"
+#import <_25519/Curve25519.h>
+#import <_25519/Ed25519.h>
+#import <_25519/Randomness.h>
 
 FOUNDATION_EXPORT double _25519VersionNumber;
 FOUNDATION_EXPORT const unsigned char _25519VersionString[];

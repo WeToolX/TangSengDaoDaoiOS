@@ -10,16 +10,16 @@
 #endif
 #endif
 
-#import "UIImage+CropRotate.h"
-#import "TOCropViewConstants.h"
-#import "TOActivityCroppedImageProvider.h"
-#import "TOCroppedImageAttributes.h"
-#import "TOCropViewControllerTransitioning.h"
-#import "TOCropViewController.h"
-#import "TOCropOverlayView.h"
-#import "TOCropScrollView.h"
-#import "TOCropToolbar.h"
-#import "TOCropView.h"
+#import <TOCropViewController/UIImage+CropRotate.h>
+#import <TOCropViewController/TOCropViewConstants.h>
+#import <TOCropViewController/TOActivityCroppedImageProvider.h>
+#import <TOCropViewController/TOCroppedImageAttributes.h>
+#import <TOCropViewController/TOCropViewControllerTransitioning.h>
+#import <TOCropViewController/TOCropViewController.h>
+#import <TOCropViewController/TOCropOverlayView.h>
+#import <TOCropViewController/TOCropScrollView.h>
+#import <TOCropViewController/TOCropToolbar.h>
+#import <TOCropViewController/TOCropView.h>
 
 FOUNDATION_EXPORT double TOCropViewControllerVersionNumber;
 FOUNDATION_EXPORT const unsigned char TOCropViewControllerVersionString[];

@@ -18,13 +18,13 @@
 #import <WuKongBase/WuKongBase-Swift.h>
 #import "Svg.h"
 #import "WKThemeUtil.h"
+#import "WKRTCSessionManager.h"
+#import "WKRTCAPI.h"
 @interface WKConversationVC ()<WKChannelManagerDelegate>
 
 @property(nonatomic,strong) WKConversationView *conversationView;
 
 @property(nonatomic,strong) WKConversationChannelHeader *channelHeader;
-
-@property(nonatomic,copy) videoCallSupportInvoke videocallInvoke; // 是否支持视频通话
 
 @property(nonatomic,strong) UIButton *cancelMutipleBtn; // 取消多选的按钮
 
@@ -33,6 +33,13 @@
 @property(nonatomic,assign) BOOL firstLoad; // 是否第一次加载
 
 @property(nonatomic,strong) UIImageView *backgroundView;
+
+@property(nonatomic,strong) UIView *injectedTopPanel;
+@property(nonatomic,strong) UIControl *rtcTopPanel;
+@property(nonatomic,strong) UILabel *rtcTopTitleLabel;
+@property(nonatomic,strong) UILabel *rtcTopSubtitleLabel;
+@property(nonatomic,strong) WKRTCCallPayload *currentRTCTopPayload;
+@property(nonatomic,assign) BOOL rtcStateRequesting;
 
 @end
 
@@ -48,9 +55,6 @@
     
     [self setupChatBackground];
    
-    self.videocallInvoke = [[WKApp shared] invoke:WKPOINT_VIDEOCALL_SUPPORT_FNC param:@{@"channel":self.channel,@"context":self.conversationView.conversationContext}];
-    
-  
     [self.navigationBar addSubview:self.channelHeader];
     [self.view addSubview:self.conversationView];
     [self.view bringSubviewToFront:self.navigationBar]; // 将导航栏放到最顶层
@@ -65,9 +69,7 @@
         [weakSelf.conversationView syncRobot:[weakSelf getMemberRobotIDs]];
         WKChannelMember *memberOfMe = weakSelf.conversationView.conversationVM.memberOfMe;
         if(memberOfMe) {
-            if(weakSelf.videocallInvoke!=nil) {
-                [weakSelf showVideoCall:memberOfMe.status == WKMemberStatusNormal];
-            }
+            [weakSelf refreshRTCCallButtons];
         }
         
     };
@@ -85,22 +87,26 @@
     
     // 获取注入的顶部面板
    UIView *topPanel = [WKApp.shared invoke:WKPOINT_CONVERSATION_TOP_PANEL param:@{@"channel":self.channel,@"context":self.conversationView.conversationContext}];
+    self.injectedTopPanel = topPanel;
     self.conversationView.topView.hidden = YES;
     self.conversationView.topView.lim_top = -self.conversationView.topView.lim_height;
     if(topPanel) {
         self.conversationView.topView.lim_height = topPanel.lim_height;
         [self.conversationView.topView addSubview:topPanel];
     }
+    [self updateInjectedTopPanel];
 }
 
 
 -(void) addDelegates {
     [[WKSDK shared].channelManager addDelegate:self]; // 频道数据监听
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateChatBackground) name:WKNOTIFY_CHATBACKGROUND_CHANGE object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(rtcChannelCallDidChange:) name:WKRTCChannelCallDidChangeNotification object:nil];
 }
 -(void) removeDelegates {
     [[WKSDK shared].channelManager removeDelegate:self];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:WKNOTIFY_CHATBACKGROUND_CHANGE object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:WKRTCChannelCallDidChangeNotification object:nil];
 }
 
 
@@ -149,7 +155,7 @@
 }
 
 - (void)dealloc {
-    NSLog(@"%s",__func__);
+    NSLog(@"会话页面释放");
     [self removeDelegates];
     [self markFlameMessages];
 }
@@ -194,6 +200,8 @@
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [self.conversationView viewWillAppear];
+    [self updateInjectedTopPanel];
+    [self queryRTCChannelStateIfNeed];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -318,21 +326,14 @@
             [[WKApp shared] invoke:WKPOINT_CONVERSATION_SETTING param:@{@"channel":weakSelf.channel,@"context":weakSelf.conversationView.conversationContext}];
         }];
         
-//        WKChannelMember *memberOfMe = weakSelf.conversationView.conversationVM.memberOfMe;
-        BOOL showCall = false;
-        if(self.videocallInvoke!=nil ) {
-            showCall = true;
-        }
-        [self showVideoCall:showCall];
+        [self refreshRTCCallButtons];
         
         [_channelHeader setOnVoiceCall:^{
-            if(weakSelf.videocallInvoke) {
-                weakSelf.videocallInvoke(weakSelf.channel,WKCallTypeAudio);
-            }
+            [weakSelf startRTCCall:WKRTCCallTypeAudio];
         }];
         
         [_channelHeader setOnVideoCall:^{
-            weakSelf.videocallInvoke(weakSelf.channel,WKCallTypeVideo);
+            [weakSelf startRTCCall:WKRTCCallTypeVideo];
         }];
 //        [_channelHeader setBackgroundColor:[UIColor redColor]];
     }
@@ -345,13 +346,322 @@
         _channelHeader.videoCallBtn.hidden = YES;
     }else {
         _channelHeader.voiceCallBtn.hidden = NO;
-        if(self.channel.channelType == WK_GROUP) {
-            _channelHeader.videoCallBtn.hidden = YES;
-        }else{
-            _channelHeader.videoCallBtn.hidden = NO;
-        }
+        _channelHeader.videoCallBtn.hidden = NO;
     }
     [_channelHeader layoutSubviews];
+}
+
+// 根据当前会话类型刷新 RTC 入口，私聊和群聊都支持语音/视频。
+-(void) refreshRTCCallButtons {
+    BOOL support = self.channel && (self.channel.channelType == WK_PERSON || self.channel.channelType == WK_GROUP);
+    if(self.channel.channelType == WK_PERSON) {
+        if([self.channel.channelId isEqualToString:[WKApp shared].config.systemUID] ||
+           [self.channel.channelId isEqualToString:[WKApp shared].config.fileHelperUID]) {
+            support = NO;
+        }
+    }
+    [self showVideoCall:support];
+}
+
+// 从会话页发起 RTC 通话，所有鉴权和媒体权限检查由会话管理器继续处理。
+-(void) startRTCCall:(WKRTCCallType)callType {
+    if(self.channel.channelType == WK_GROUP) {
+        [self showRTCGroupInviteOptionsForCallType:callType];
+        return;
+    }
+    [[WKRTCSessionManager shared] startCallWithChannel:self.channel callType:callType inviteUids:nil];
+}
+
+// 群聊发起通话时允许选择强邀请成员；不选择则按普通群通话发起。
+-(void) showRTCGroupInviteOptionsForCallType:(WKRTCCallType)callType {
+    NSString *title = callType == WKRTCCallTypeVideo ? LLang(@"发起群视频通话") : LLang(@"发起群语音通话");
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:LLang(@"可选择需要强提醒的群成员") preferredStyle:UIAlertControllerStyleActionSheet];
+    __weak typeof(self) weakSelf = self;
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"直接发起") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [[WKRTCSessionManager shared] startCallWithChannel:weakSelf.channel callType:callType inviteUids:nil];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"选择成员并发起") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [weakSelf showRTCGroupInviteSelectorForCallType:callType];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:nil]];
+    if(alert.popoverPresentationController) {
+        alert.popoverPresentationController.sourceView = callType == WKRTCCallTypeVideo ? self.channelHeader.videoCallBtn : self.channelHeader.voiceCallBtn;
+        alert.popoverPresentationController.sourceRect = alert.popoverPresentationController.sourceView.bounds;
+    }
+    [[WKNavigationManager shared].topViewController presentViewController:alert animated:YES completion:nil];
+}
+
+// 成员选择器只使用当前 SDK 已同步的群成员；服务端仍会最终校验邀请权限。
+-(void) showRTCGroupInviteSelectorForCallType:(WKRTCCallType)callType {
+    NSArray<WKContactsSelect *> *members = [self rtcInviteContactsForCurrentGroup];
+    if(members.count == 0) {
+        [[WKNavigationManager shared].topViewController.view showMsg:LLang(@"群成员数据为空，请稍后重试")];
+        return;
+    }
+    WKContactsSelectVC *vc = [WKContactsSelectVC new];
+    vc.showBack = YES;
+    vc.mode = WKContactsModeMulti;
+    vc.title = LLang(@"选择邀请成员");
+    vc.data = members;
+    NSString *uid = [WKSDK shared].options.connectInfo.uid;
+    vc.hiddenUsers = uid.length > 0 ? @[uid] : @[];
+    __weak typeof(self) weakSelf = self;
+    vc.onFinishedSelect = ^(NSArray<NSString *> *uids) {
+        if(uids.count == 0) {
+            [[WKNavigationManager shared].topViewController.view showMsg:LLang(@"请选择成员")];
+            return;
+        }
+        UIViewController *selectorVC = weakSelf.presentedViewController;
+        void (^startBlock)(void) = ^{
+            [[WKRTCSessionManager shared] startCallWithChannel:weakSelf.channel callType:callType inviteUids:uids];
+        };
+        if(selectorVC) {
+            [selectorVC dismissViewControllerAnimated:YES completion:startBlock];
+        }else {
+            startBlock();
+        }
+    };
+    [[WKNavigationManager shared].topViewController presentViewController:vc animated:YES completion:nil];
+}
+
+-(NSArray<WKContactsSelect *> *)rtcInviteContactsForCurrentGroup {
+    if(self.channel.channelType != WK_GROUP || self.channel.channelId.length == 0) {
+        return @[];
+    }
+    WKChannel *channel = [[WKChannel alloc] initWith:self.channel.channelId channelType:self.channel.channelType];
+    NSArray<WKChannelMember *> *members = [[WKSDK shared].channelManager getMembersWithChannel:channel];
+    NSMutableArray<WKContactsSelect *> *items = [NSMutableArray array];
+    for (WKChannelMember *member in members) {
+        if(member.memberUid.length == 0) {
+            continue;
+        }
+        [items addObject:[WKModelConvert toContactsSelect:member]];
+    }
+    return items.copy;
+}
+
+-(void) showTopView:(BOOL)show {
+    [self.conversationView showTopView:show animated:YES];
+}
+
+-(void) updateInjectedTopPanel {
+    [self.conversationView.topView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    CGFloat topHeight = 0.0f;
+    if([self shouldShowRTCTopPanelForPayload:self.currentRTCTopPayload]) {
+        [self configureRTCTopPanelWithPayload:self.currentRTCTopPayload];
+        self.rtcTopPanel.frame = CGRectMake(0.0f, topHeight, self.conversationView.topView.lim_width, 54.0f);
+        [self layoutRTCTopPanel];
+        [self.conversationView.topView addSubview:self.rtcTopPanel];
+        topHeight += self.rtcTopPanel.lim_height;
+    }
+    if(self.injectedTopPanel) {
+        self.injectedTopPanel.lim_top = topHeight;
+        [self.conversationView.topView addSubview:self.injectedTopPanel];
+        topHeight += self.injectedTopPanel.lim_height;
+    }
+    if(topHeight > 0.0f) {
+        self.conversationView.topView.lim_height = topHeight;
+        [self.conversationView showTopView:YES animated:YES];
+    }else {
+        [self.conversationView showTopView:NO animated:YES];
+    }
+}
+
+#pragma mark - RTC 顶部通话入口
+
+// 只在群语音会话展示普通正在通话入口，私聊与群视频仍走通话页。
+-(void) queryRTCChannelStateIfNeed {
+    if(self.channel.channelType != WK_GROUP || self.channel.channelId.length == 0 || self.rtcStateRequesting) {
+        return;
+    }
+    self.rtcStateRequesting = YES;
+    __weak typeof(self) weakSelf = self;
+    [[WKRTCAPI shared] channelStateWithChannelId:self.channel.channelId channelType:self.channel.channelType].then(^(WKRTCChannelStateResp *resp){
+        weakSelf.rtcStateRequesting = NO;
+        if(resp.existing && resp.callId.length > 0 && resp.callType == WKRTCCallTypeAudio) {
+            WKRTCCallPayload *payload = [WKRTCCallPayload payloadWithChannelState:resp channel:weakSelf.channel];
+            [weakSelf showRTCTopPayload:payload];
+        }else {
+            [weakSelf hideRTCTopPayloadIfCallId:nil];
+        }
+    }).catch(^(NSError *error){
+        weakSelf.rtcStateRequesting = NO;
+        WKLogDebug(@"音视频查询群聊通话状态失败：%@", error);
+    });
+}
+
+// 处理服务端在线通话通知，当前会话匹配时刷新顶部入口。
+-(void) rtcChannelCallDidChange:(NSNotification*)notification {
+    WKRTCCallPayload *payload = notification.userInfo[@"payload"];
+    NSString *cmd = notification.userInfo[@"cmd"];
+    if(![payload isKindOfClass:WKRTCCallPayload.class] || ![self isCurrentChannelRTCPayload:payload]) {
+        return;
+    }
+    if([cmd isEqualToString:@"rtc.closed"] ||
+       [cmd isEqualToString:@"rtc.cancelled"] ||
+       [cmd isEqualToString:@"rtc.timeout"]) {
+        [self hideRTCTopPayloadIfCallId:payload.callId];
+        return;
+    }
+    if([cmd isEqualToString:@"rtc.notice"] || [cmd isEqualToString:@"rtc.invite"] || [cmd isEqualToString:@"rtc.joined"]) {
+        if([self shouldShowRTCTopPanelForPayload:payload]) {
+            [self showRTCTopPayload:payload];
+        }else {
+            [self hideRTCTopPayloadIfCallId:payload.callId];
+        }
+    }
+}
+
+-(BOOL) isCurrentChannelRTCPayload:(WKRTCCallPayload*)payload {
+    return payload.channelType == self.channel.channelType && [payload.channelId isEqualToString:self.channel.channelId];
+}
+
+-(BOOL) shouldShowRTCTopPanelForPayload:(WKRTCCallPayload*)payload {
+    return payload.callId.length > 0 && payload.channelType == WK_GROUP && payload.callType == WKRTCCallTypeAudio;
+}
+
+-(void) showRTCTopPayload:(WKRTCCallPayload*)payload {
+    if(![self shouldShowRTCTopPanelForPayload:payload]) {
+        return;
+    }
+    self.currentRTCTopPayload = payload;
+    [self updateInjectedTopPanel];
+}
+
+-(void) hideRTCTopPayloadIfCallId:(NSString*)callId {
+    if(callId.length > 0 && self.currentRTCTopPayload.callId.length > 0 && ![self.currentRTCTopPayload.callId isEqualToString:callId]) {
+        return;
+    }
+    self.currentRTCTopPayload = nil;
+    [self updateInjectedTopPanel];
+}
+
+-(void) configureRTCTopPanelWithPayload:(WKRTCCallPayload*)payload {
+    self.rtcTopTitleLabel.text = LLang(@"正在通话，点击加入");
+    NSString *fromName = payload.fromName.length > 0 ? payload.fromName : payload.fromUid;
+    NSString *callType = payload.callType == WKRTCCallTypeVideo ? LLang(@"群视频通话") : LLang(@"群语音通话");
+    if(fromName.length > 0) {
+        self.rtcTopSubtitleLabel.text = [NSString stringWithFormat:@"%@%@%@", fromName, LLang(@"发起 · "), callType];
+    }else {
+        self.rtcTopSubtitleLabel.text = callType;
+    }
+    [self.rtcTopPanel setNeedsLayout];
+}
+
+-(void) layoutRTCTopPanel {
+    CGFloat width = self.rtcTopPanel.lim_width > 0.0f ? self.rtcTopPanel.lim_width : WKScreenWidth;
+    UIView *dotView = [self.rtcTopPanel viewWithTag:1001];
+    UILabel *arrowLabel = (UILabel*)[self.rtcTopPanel viewWithTag:1002];
+    dotView.frame = CGRectMake(14.0f, 22.0f, 10.0f, 10.0f);
+    arrowLabel.frame = CGRectMake(width - 32.0f, 0.0f, 18.0f, 54.0f);
+    self.rtcTopTitleLabel.frame = CGRectMake(36.0f, 8.0f, width - 78.0f, 21.0f);
+    self.rtcTopSubtitleLabel.frame = CGRectMake(36.0f, 30.0f, width - 78.0f, 17.0f);
+}
+
+-(void) rtcTopPanelPressed {
+    WKRTCCallPayload *payload = self.currentRTCTopPayload;
+    if(payload.callId.length == 0) {
+        [self queryRTCChannelStateIfNeed];
+        return;
+    }
+    [[WKNavigationManager shared].topViewController.view showHUD:LLang(@"正在加入")];
+    __weak typeof(self) weakSelf = self;
+    [[WKRTCSessionManager shared] joinCallWithPayload:payload joinCode:@"" completion:^(NSError * _Nullable error) {
+        [[WKNavigationManager shared].topViewController.view hideHud];
+        if(error) {
+            if(error.code == 40006) {
+                [weakSelf showRTCJoinCodePromptForPayload:payload message:error.localizedDescription ?: LLang(@"请输入加入码后重试")];
+            }else {
+                [[WKNavigationManager shared].topViewController.view showMsg:error.localizedDescription ?: LLang(@"加入通话失败")];
+            }
+            [weakSelf queryRTCChannelStateIfNeed];
+        }
+    }];
+}
+
+// 服务端要求加入码时，基于当前已知通话编号继续输入加入码，不自行推断其他通话信息。
+-(void) showRTCJoinCodePromptForPayload:(WKRTCCallPayload*)payload message:(NSString*)message {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LLang(@"输入加入码") message:message preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.placeholder = LLang(@"通话编号");
+        textField.text = payload.callId ?: @"";
+        textField.enabled = payload.callId.length == 0;
+    }];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.placeholder = LLang(@"加入码");
+        textField.keyboardType = UIKeyboardTypeNumberPad;
+    }];
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:nil]];
+    __weak typeof(self) weakSelf = self;
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"加入") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        NSString *callId = alert.textFields.firstObject.text ?: @"";
+        NSString *joinCode = alert.textFields.lastObject.text ?: @"";
+        if(callId.length == 0 || joinCode.length == 0) {
+            [[WKNavigationManager shared].topViewController.view showMsg:LLang(@"通话编号和加入码不能为空")];
+            return;
+        }
+        WKRTCCallPayload *joinPayload = [WKRTCCallPayload new];
+        joinPayload.callId = callId;
+        joinPayload.roomName = payload.roomName ?: @"";
+        joinPayload.channelId = payload.channelId ?: weakSelf.channel.channelId;
+        joinPayload.channelType = payload.channelType ?: weakSelf.channel.channelType;
+        joinPayload.callType = payload.callType;
+        [[WKNavigationManager shared].topViewController.view showHUD:LLang(@"正在加入")];
+        [[WKRTCSessionManager shared] joinCallWithPayload:joinPayload joinCode:joinCode completion:^(NSError * _Nullable error) {
+            [[WKNavigationManager shared].topViewController.view hideHud];
+            if(error) {
+                [[WKNavigationManager shared].topViewController.view showMsg:error.localizedDescription ?: LLang(@"加入通话失败")];
+            }
+        }];
+    }]];
+    [[WKNavigationManager shared].topViewController presentViewController:alert animated:YES completion:nil];
+}
+
+- (UIControl *)rtcTopPanel {
+    if(!_rtcTopPanel) {
+        _rtcTopPanel = [[UIControl alloc] initWithFrame:CGRectMake(0.0f, 0.0f, WKScreenWidth, 54.0f)];
+        _rtcTopPanel.backgroundColor = [WKApp.shared.config.themeColor colorWithAlphaComponent:0.92f];
+        [_rtcTopPanel addTarget:self action:@selector(rtcTopPanelPressed) forControlEvents:UIControlEventTouchUpInside];
+        
+        UIView *dotView = [[UIView alloc] initWithFrame:CGRectMake(14.0f, 20.0f, 10.0f, 10.0f)];
+        dotView.backgroundColor = UIColor.whiteColor;
+        dotView.layer.cornerRadius = 5.0f;
+        dotView.layer.masksToBounds = YES;
+        dotView.tag = 1001;
+        [_rtcTopPanel addSubview:dotView];
+        
+        [_rtcTopPanel addSubview:self.rtcTopTitleLabel];
+        [_rtcTopPanel addSubview:self.rtcTopSubtitleLabel];
+        
+        UILabel *arrowLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+        arrowLabel.text = @">";
+        arrowLabel.textColor = UIColor.whiteColor;
+        arrowLabel.font = [UIFont systemFontOfSize:18.0f weight:UIFontWeightSemibold];
+        arrowLabel.textAlignment = NSTextAlignmentRight;
+        arrowLabel.tag = 1002;
+        [_rtcTopPanel addSubview:arrowLabel];
+    }
+    return _rtcTopPanel;
+}
+
+- (UILabel *)rtcTopTitleLabel {
+    if(!_rtcTopTitleLabel) {
+        _rtcTopTitleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+        _rtcTopTitleLabel.textColor = UIColor.whiteColor;
+        _rtcTopTitleLabel.font = [WKApp.shared.config appFontOfSizeSemibold:15.0f];
+    }
+    return _rtcTopTitleLabel;
+}
+
+- (UILabel *)rtcTopSubtitleLabel {
+    if(!_rtcTopSubtitleLabel) {
+        _rtcTopSubtitleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+        _rtcTopSubtitleLabel.textColor = [UIColor colorWithWhite:1.0f alpha:0.82f];
+        _rtcTopSubtitleLabel.font = [WKApp.shared.config appFontOfSize:12.0f];
+        _rtcTopSubtitleLabel.adjustsFontSizeToFitWidth = YES;
+        _rtcTopSubtitleLabel.minimumScaleFactor = 0.75f;
+    }
+    return _rtcTopSubtitleLabel;
 }
 
 

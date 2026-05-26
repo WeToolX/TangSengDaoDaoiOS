@@ -10,11 +10,11 @@
 #endif
 #endif
 
-#import "YYAnimatedImageView.h"
-#import "YYFrameImage.h"
-#import "YYImage.h"
-#import "YYImageCoder.h"
-#import "YYSpriteSheetImage.h"
+#import <YYImage/YYAnimatedImageView.h>
+#import <YYImage/YYFrameImage.h>
+#import <YYImage/YYImage.h>
+#import <YYImage/YYImageCoder.h>
+#import <YYImage/YYSpriteSheetImage.h>
 
 FOUNDATION_EXPORT double YYImageVersionNumber;
 FOUNDATION_EXPORT const unsigned char YYImageVersionString[];

@@ -46,6 +46,8 @@
             if(weakSelf.again) {
                 if(![password isEqualToString:weakSelf.firstPwd]) {
                     [weakSelf.view showMsg:LLangW(@"两次密码输入不一致",weakSelf)];
+                    [weakSelf.corePasswordView clearPassword];
+                    [weakSelf.corePasswordView beginInput];
                     return;
                 }
                 [weakSelf.view showHUD];

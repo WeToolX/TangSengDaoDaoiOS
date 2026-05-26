@@ -25,6 +25,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property(nonatomic,assign,readonly) BOOL muteOfApp; // app静音
 
+@property(nonatomic,assign,readonly) BOOL deviceLock; // 设备锁
+
 
 
 /// 新消息通知
@@ -59,6 +61,11 @@ NS_ASSUME_NONNULL_BEGIN
 // app静音
 -(AnyPromise*) muteOfApp:(BOOL)on;
 
+// 设备锁
+-(AnyPromise*) deviceLock:(BOOL)on;
+
+// 从服务端刷新登录用户设置
+-(AnyPromise*) requestSetting;
 
 @end
 

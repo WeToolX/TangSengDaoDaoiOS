@@ -14,6 +14,10 @@
 #import "WKConversationContext.h"
 #import "WKCardContent.h"
 #import "WKFuncGroupEditVC.h"
+#import "WKFileContent.h"
+#import "WKSmallVideoContent.h"
+#import "WKVideoRecordUtil.h"
+#import <MobileCoreServices/MobileCoreServices.h>
 @interface WKPanelDefaultFuncItem ()
 
 
@@ -178,6 +182,34 @@
 
 @end
 
+@implementation WKPanelVideoFuncItem
+
+- (NSString *)sid {
+    return @"apm.wukong.smallvideo";
+}
+
+- (UIImage *)itemIcon {
+    return [self getImageNameForBase:@"Conversation/Toolbar/VideoNormal"];
+}
+
+- (NSString *)title {
+    return LLang(@"小视频");
+}
+
+- (void)onPressed:(UIButton *)btn {
+    id<WKConversationContext> context = self.inputPanel.conversationContext;
+    [context endEditing];
+    [WKVideoRecordUtil videoRecord:^(NSString *coverPath, NSString *videoPath) {
+        WKSmallVideoContent *content = [WKSmallVideoContent videoContentWithVideoPath:videoPath coverPath:coverPath];
+        [context sendMessage:content];
+    } imgCallback:^(UIImage *img) {
+        WKImageContent *content = [WKImageContent initWithImage:img];
+        [context sendMessage:content];
+    }];
+}
+
+@end
+
 @implementation WKPanelMoreFuncItem
 
 - (NSString *)sid {
@@ -202,6 +234,61 @@
 - (WKFuncGroupEditItemType)type {
     return WKFuncGroupEditItemTypeMore;
 }
+@end
+
+@interface WKPanelFileFuncItem ()<UIDocumentPickerDelegate>
+@property(nonatomic,weak) id<WKConversationContext> pickerContext;
+@end
+
+@implementation WKPanelFileFuncItem
+
+static long long const WKPanelFileMaxSendBytes = 100LL * 1024LL * 1024LL;
+
+- (NSString *)sid {
+    return @"apm.wukong.file";
+}
+
+- (UIImage *)itemIcon {
+    return [self getImageNameForBase:@"Conversation/Toolbar/FileNormal"];
+}
+
+- (NSString *)title {
+    return LLang(@"文件");
+}
+
+- (void)onPressed:(UIButton *)btn {
+    self.pickerContext = self.inputPanel.conversationContext;
+    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[(NSString *)kUTTypeData] inMode:UIDocumentPickerModeImport];
+    picker.delegate = self;
+    picker.allowsMultipleSelection = NO;
+    [[WKNavigationManager shared].topViewController presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    NSURL *url = urls.firstObject;
+    if (!url || !self.pickerContext) {
+        return;
+    }
+    NSString *path = url.path;
+    BOOL isDirectory = NO;
+    if(![[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory] || isDirectory) {
+        [[WKNavigationManager shared].topViewController.view makeToast:LLang(@"文件无效")];
+        return;
+    }
+    NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil];
+    long long size = [attrs fileSize];
+    if(size <= 0) {
+        [[WKNavigationManager shared].topViewController.view makeToast:LLang(@"文件为空")];
+        return;
+    }
+    if(size > WKPanelFileMaxSendBytes) {
+        [[WKNavigationManager shared].topViewController.view makeToast:LLang(@"文件不能超过100MB")];
+        return;
+    }
+    WKFileContent *content = [WKFileContent fileContentWithPath:path name:url.lastPathComponent size:size];
+    [self.pickerContext sendMessage:content];
+}
+
 @end
 
 
@@ -256,4 +343,3 @@
 }
 
 @end
-

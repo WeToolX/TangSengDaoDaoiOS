@@ -13,11 +13,12 @@
 -(AnyPromise*) requestLockscreenpwd:(NSString*)password {
    
     NSString *pwd = [[self class] digestLockScreenPwd:password];
-    [WKApp shared].loginInfo.extra[@"lock_screen_pwd"] = pwd;
-    [[WKApp shared].loginInfo save];
    return [[WKAPIClient sharedClient] POST:@"user/lockscreenpwd" parameters:@{
         @"lock_screen_pwd":pwd,
-    }];
+    }].then(^{
+        [WKApp shared].loginInfo.extra[@"lock_screen_pwd"] = pwd;
+        [[WKApp shared].loginInfo save];
+    });
 }
 
 +(NSString*) digestLockScreenPwd:(NSString*)pwd {

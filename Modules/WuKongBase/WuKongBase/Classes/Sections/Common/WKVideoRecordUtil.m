@@ -22,18 +22,22 @@
             }
         }else if(videoURL) {
             if(callback) {
-                AVURLAsset *asset = [[AVURLAsset alloc] initWithURL:videoURL options:nil];
-                if(!asset) {
-                    return;
-                }
-                UIImage *coverImg =  [WKVideoRecordUtil getVideoPreViewImage:asset];
-                NSFileManager *fileManager = [NSFileManager defaultManager];
-                NSData * coverImgData  = UIImageJPEGRepresentation(coverImg, 0.5f);
-                NSString *tmpConverPath = [self getTmpCoverImgPath];
-                [fileManager createFileAtPath:tmpConverPath contents:coverImgData attributes:nil];
-                
-                callback(tmpConverPath,videoURL.absoluteString);
-                
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                    AVURLAsset *asset = [[AVURLAsset alloc] initWithURL:videoURL options:nil];
+                    if(!asset) {
+                        return;
+                    }
+                    UIImage *coverImg =  [WKVideoRecordUtil getVideoPreViewImage:asset];
+                    NSData *coverImgData = coverImg ? UIImageJPEGRepresentation(coverImg, 0.5f) : nil;
+                    NSString *tmpConverPath = [self getTmpCoverImgPath];
+                    if(coverImgData) {
+                        NSFileManager *fileManager = [NSFileManager defaultManager];
+                        [fileManager createFileAtPath:tmpConverPath contents:coverImgData attributes:nil];
+                    }
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        callback(coverImgData ? tmpConverPath : nil, videoURL.absoluteString);
+                    });
+                });
             }
         }
     } cancelBlock:^{
@@ -109,8 +113,8 @@
     NSError *error = nil;
     CMTime actualTime;
     CGImageRef image = [assetGen copyCGImageAtTime:time actualTime:&actualTime error:&error];
-    UIImage *videoImage = [[UIImage alloc] initWithCGImage:image];
-    CGImageRelease(image);
+    UIImage *videoImage = image ? [[UIImage alloc] initWithCGImage:image] : nil;
+    if(image) CGImageRelease(image);
     return videoImage;
 }
 

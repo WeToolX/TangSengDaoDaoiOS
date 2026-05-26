@@ -132,12 +132,16 @@
 }
 
 - (void)respondsToSliderTouchFinished:(UISlider *)slider {
+    _dragging = NO;
     [self.delegate yb_videoActionBar:self changeValue:slider.value];
 }
 
 - (void)respondsToSliderTouchDown:(UISlider *)slider {
     _dragging = YES;
-    slider.userInteractionEnabled = NO;
+}
+
+- (void)respondsToSliderValueChanged:(UISlider *)slider {
+    self.preTimeLabel.attributedText = [self.class timeformatFromSeconds:slider.value];
 }
 
 #pragma mark - getters
@@ -183,6 +187,7 @@
         _slider = [WKVideoBrowseActionSlider new];
         [_slider addTarget:self action:@selector(respondsToSliderTouchFinished:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchCancel|UIControlEventTouchUpOutside];
         [_slider addTarget:self action:@selector(respondsToSliderTouchDown:) forControlEvents:UIControlEventTouchDown];
+        [_slider addTarget:self action:@selector(respondsToSliderValueChanged:) forControlEvents:UIControlEventValueChanged];
     }
     return _slider;
 }

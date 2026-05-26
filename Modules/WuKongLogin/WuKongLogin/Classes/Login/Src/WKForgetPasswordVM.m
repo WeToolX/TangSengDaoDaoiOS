@@ -6,6 +6,7 @@
 //
 
 #import "WKForgetPasswordVM.h"
+#import <WuKongBase/WKMD5Util.h>
 
 @implementation WKForgetPasswordVM
 
@@ -15,6 +16,6 @@
 }
 
 - (AnyPromise *)setNewPwd:(NSString *)zone phone:(NSString *)phone code:(NSString *)code pwd:(NSString *)pwd {
-    return [[WKAPIClient sharedClient] POST:@"user/pwdforget" parameters:@{@"zone":zone?:@"",@"phone":phone,@"code":code,@"pwd":pwd}];
+    return [[WKAPIClient sharedClient] POST:@"user/pwdforget" parameters:@{@"zone":zone?:@"",@"phone":phone,@"code":code,@"pwd":[WKMD5Util md5HexDigest:pwd?:@""]}];
 }
 @end

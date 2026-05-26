@@ -16,7 +16,7 @@
     "tag": "0.1.0"
   },
   "platforms": {
-    "ios": "12.0"
+    "ios": "15.0"
   },
   "resource_bundles": {
     "WuKongBase_images": [
@@ -32,7 +32,10 @@
     "WuKongBase/Assets/Lang"
   ],
   "private_header_files": "WuKongBase/Classes/Vendor/**/*",
-  "source_files": "WuKongBase/Classes/**/*",
+  "source_files": "WuKongBase/Classes/**/*.{h,m,mm,c,cc,cpp,swift}",
+  "exclude_files": [
+    "WuKongBase/Classes/Sections/Common/TelegramUtils/GZip/GZip.h"
+  ],
   "vendored_frameworks": "WuKongBase/Bugly.framework",
   "libraries": [
     "c++",
@@ -126,6 +129,8 @@
   "frameworks": [
     "UIKit",
     "MapKit",
-    "AVFoundation"
+    "AVFoundation",
+    "QuickLook",
+    "CallKit"
   ]
 }

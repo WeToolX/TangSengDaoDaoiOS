@@ -6,6 +6,8 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <AVFoundation/AVFoundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -15,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 录视频
 +(void) videoRecord:(void(^)(NSString *coverPath,NSString *videoPath))callback imgCallback:(void(^)(UIImage*img))imgCallback;
 +(void) videoRecord:(void(^)(NSString *coverPath,NSString *videoPath))callback;
++ (UIImage*) getVideoPreViewImage:(AVURLAsset *)asset;
 
 @end
 

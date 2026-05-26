@@ -28,14 +28,14 @@ TODO: Add long description of the pod here.
   s.source           = { :git => 'https://github.com/tangtaoit/WuKongContacts.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '12.0'
+  s.ios.deployment_target = '15.0'
   s.resource_bundles = {
     'WuKongContacts_images' => ['WuKongContacts/Assets/Images.xcassets'],
     'WuKongContacts_resources' => ['WuKongContacts/Assets/DB']
   }
   s.resources = ['WuKongContacts/Assets/Lang']
   
-  s.source_files = 'WuKongContacts/Classes/**/*'
+  s.source_files = 'WuKongContacts/Classes/**/*.{h,m,mm,c,cc,cpp,swift}'
   s.dependency 'WuKongBase'
   s.dependency 'PromiseKit/CorePromise', '~> 6.0'
   s.dependency 'FMDB/SQLCipher', '~>2.7.5'

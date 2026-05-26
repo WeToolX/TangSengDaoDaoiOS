@@ -11,6 +11,9 @@
 #import "WKUserInfoVC.h"
 #import "WKContactsFriendRequestVC.h"
 #import "WKMyGroupListVC.h"
+#import "WKContactsLabelListVC.h"
+#import "WKMomentTimelineVC.h"
+#import "WKMomentNoticeManager.h"
 @WKModule(WKContactsModule)
 
 @interface WKContactsModule ()<WKChannelManagerDelegate>
@@ -88,6 +91,52 @@
            }];
            return item;
        } category:WKPOINT_CATEGORY_CONTACTSITEM sort:8000];
+
+    // 标签item
+    [self setMethod:@"contacts.header.labels" handler:^id _Nullable(id  _Nonnull param) {
+        WKContactsHeaderItem *item = [WKContactsHeaderItem initWithSid:@"contacts.header.labels" title:LLangW(@"标签",weakSelf) icon:@"Contacts/Index/Labels" moduleID:[weakSelf moduleId] onClick:^{
+            [[WKNavigationManager shared] pushViewController:[WKContactsLabelListVC new] animated:YES];
+        }];
+        return item;
+    } category:WKPOINT_CATEGORY_CONTACTSITEM sort:8500];
+
+    // 朋友圈item
+    [self setMethod:@"contacts.header.moments" handler:^id _Nullable(id  _Nonnull param) {
+        WKContactsHeaderItem *item = [WKContactsHeaderItem initWithSid:@"contacts.header.moments" title:LLangW(@"朋友圈",weakSelf) icon:@"Contacts/Index/Moments" moduleID:[weakSelf moduleId] onClick:^{
+            [[WKNavigationManager shared] pushViewController:[[WKMomentTimelineVC alloc] init] animated:YES];
+        }];
+        NSInteger count = [WKMomentNoticeManager shared].unreadCount;
+        if(count > 0) {
+            item.badgeValue = [NSString stringWithFormat:@"%ld",(long)count];
+        }
+        return item;
+    } category:WKPOINT_CATEGORY_CONTACTSITEM sort:8600];
+
+    [self setMethod:@"contacts.tab.moments" handler:^id _Nullable(id  _Nonnull param) {
+        NSInteger count = [WKMomentNoticeManager shared].unreadCount;
+        return count > 0 ? @(count) : nil;
+    } category:WK_CONTACTS_CATEGORY_TAB_REDDOT sort:1000];
+
+    [self setMethod:@"user.info.moments" handler:^id _Nullable(id  _Nonnull param) {
+        NSString *uid = param[@"uid"];
+        if(uid.length == 0) {
+            return nil;
+        }
+        return @{
+            @"height":@(0.0f),
+            @"items":@[
+                    @{
+                        @"class":WKLabelItemModel.class,
+                        @"label":LLangW(@"朋友圈",weakSelf),
+                        @"onClick":^{
+                            [[WKNavigationManager shared] pushViewController:[[WKMomentTimelineVC alloc] initWithUID:uid] animated:YES];
+                        }
+                    },
+            ],
+        };
+    } category:WKPOINT_CATEGORY_USER_INFO_ITEM sort:3500];
+
+    [[WKMomentNoticeManager shared] sync];
 
     
 }

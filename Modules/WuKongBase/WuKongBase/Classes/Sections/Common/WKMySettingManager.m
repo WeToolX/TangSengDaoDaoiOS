@@ -58,6 +58,19 @@
     return [self setting:@"mute_of_app" on:on];
 }
 
+-(AnyPromise*) deviceLock:(BOOL)on {
+    return [self setting:@"device_lock" on:on];
+}
+
+-(AnyPromise*) requestSetting {
+    return [[WKAPIClient sharedClient] GET:@"user/my/setting" parameters:nil].then(^(NSDictionary *setting) {
+        if([setting isKindOfClass:NSDictionary.class]) {
+            [WKApp shared].loginInfo.extra[@"setting"] = [NSMutableDictionary dictionaryWithDictionary:setting];
+            [[WKApp shared].loginInfo save];
+        }
+    });
+}
+
 
 - (BOOL)newMsgNotice {
     return [self setting:@"new_msg_notice"];
@@ -89,6 +102,10 @@
 
 - (BOOL)muteOfApp {
     return [self setting:@"mute_of_app"];
+}
+
+- (BOOL)deviceLock {
+    return [self setting:@"device_lock"];
 }
 
 

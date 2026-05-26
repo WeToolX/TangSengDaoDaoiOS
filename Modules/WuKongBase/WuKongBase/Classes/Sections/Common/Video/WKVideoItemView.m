@@ -24,6 +24,8 @@
     AVPlayer *_player;
     AVPlayerItem *_playerItem;
     AVPlayerLayer *_playerLayer;
+    id _timeObserverToken;
+    BOOL _observingPlayerItemStatus;
     BOOL _active;
 }
 
@@ -199,8 +201,9 @@
 
 - (void)addObserverForPlayer {
     [_playerItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+    _observingPlayerItemStatus = YES;
     __weak typeof(self) wSelf = self;
-    [_player addPeriodicTimeObserverForInterval:CMTimeMake(1, 1) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
+    _timeObserverToken = [_player addPeriodicTimeObserverForInterval:CMTimeMake(1, 1) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
         __strong typeof(wSelf) self = wSelf;
         if (!self) return;
         float currentTime = time.value / time.timescale;
@@ -210,7 +213,14 @@
 }
 
 - (void)removeObserverForPlayer {
-    [_playerItem removeObserver:self forKeyPath:@"status"];
+    if (_timeObserverToken && _player) {
+        [_player removeTimeObserver:_timeObserverToken];
+        _timeObserverToken = nil;
+    }
+    if (_observingPlayerItemStatus) {
+        [_playerItem removeObserver:self forKeyPath:@"status"];
+        _observingPlayerItemStatus = NO;
+    }
     [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:_playerItem];
 }
 

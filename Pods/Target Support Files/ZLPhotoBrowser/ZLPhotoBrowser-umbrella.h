@@ -10,8 +10,8 @@
 #endif
 #endif
 
-#import "ZLWeakProxy.h"
-#import "ZLPhotoBrowser.h"
+#import <ZLPhotoBrowser/ZLWeakProxy.h>
+#import <ZLPhotoBrowser/ZLPhotoBrowser.h>
 
 FOUNDATION_EXPORT double ZLPhotoBrowserVersionNumber;
 FOUNDATION_EXPORT const unsigned char ZLPhotoBrowserVersionString[];

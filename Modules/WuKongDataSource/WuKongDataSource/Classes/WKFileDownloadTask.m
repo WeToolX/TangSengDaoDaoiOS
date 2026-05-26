@@ -77,7 +77,7 @@
             if(copyError) {
                 WKLogError(@"复制文件失败！%@",copyError);
                 weakSelf.status = WKTaskStatusError;
-                weakSelf.error = error;
+                weakSelf.error = copyError;
             }else {
                 weakSelf.status = WKTaskStatusSuccess;
                 weakSelf.error = nil;

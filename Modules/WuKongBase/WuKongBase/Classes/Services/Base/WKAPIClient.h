@@ -51,6 +51,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(AnyPromise* _Nonnull) GET:(NSString* _Nonnull)path parameters:(nullable id)parameters;
 
+-(AnyPromise* _Nonnull) GETRaw:(NSString* _Nonnull)path parameters:(nullable id)parameters;
+
 -(AnyPromise*_Nonnull) GET:(NSString*_Nonnull)path parameters:(nullable id)parameters model:(Class _Nullable ) modelClass;
 
 /**

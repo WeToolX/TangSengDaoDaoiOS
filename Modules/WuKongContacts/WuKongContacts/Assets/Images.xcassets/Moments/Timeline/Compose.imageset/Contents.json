@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "Compose.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

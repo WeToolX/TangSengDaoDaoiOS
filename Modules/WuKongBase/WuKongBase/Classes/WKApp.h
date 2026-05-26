@@ -257,6 +257,9 @@ NS_ASSUME_NONNULL_BEGIN
 // 按需加载当前用户收藏的表情
 -(AnyPromise*) loadCollectStickersIfNeed;
 
+// 更新截图保护，开启后系统截图/录屏捕获空白内容
+-(void) updateScreenshotProtection;
+
 // 是否是系统账号(系统通知和文件助手)
 -(BOOL) isSystemAccount:(NSString*)uid;
 
@@ -279,4 +282,3 @@ FOUNDATION_EXPORT WKChannelExtraKey const _Nullable WKChannelExtraKeyVercode; //
 FOUNDATION_EXPORT WKChannelExtraKey const _Nullable WKChannelExtraKeyAllowViewHistoryMsg; // 允许新成员查看群历史消息
 
 FOUNDATION_EXPORT WKChannelExtraKey const _Nullable WKChannelExtraKeyRemark; // 备注
-

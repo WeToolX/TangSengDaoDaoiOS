@@ -7,6 +7,7 @@
 
 #import "WKLoginVM.h"
 #import <WuKongBase/WuKongBase.h>
+#import <WuKongBase/WKMD5Util.h>
 @implementation WKLoginResp
 
 +(WKModel*) fromMap:(NSDictionary*)dictory type:(ModelMapType)type{
@@ -46,7 +47,7 @@
 
 -(AnyPromise*) login:(NSString*) username password:(NSString*)password {
     
-    return  [[WKAPIClient sharedClient] POST:@"user/login" parameters:@{@"username":username,@"password":password,@"device":@{@"device_id":[UIDevice getUUID],@"device_name":[UIDevice getDeviceName],@"device_model":[UIDevice getDeviceModel]}} model:WKLoginResp.class];
+    return  [[WKAPIClient sharedClient] POST:@"user/login" parameters:@{@"username":username,@"password":[WKMD5Util md5HexDigest:password?:@""],@"device":@{@"device_id":[UIDevice getUUID],@"device_name":[UIDevice getDeviceName],@"device_model":[UIDevice getDeviceModel]}} model:WKLoginResp.class];
    
 }
 
@@ -93,5 +94,4 @@
     }
 }
 @end
-
 

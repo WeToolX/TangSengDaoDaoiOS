@@ -31,6 +31,22 @@
 #import "WKConversationLastMessageAndUnreadCount.h"
 #import "WKMessageQueueManager.h"
 
+static const NSInteger WKChatManagerRTCCallContentType = 9994;
+
+static NSNumber *WKChatManagerNormalizePayloadContentType(id rawContentType) {
+    if([rawContentType isKindOfClass:NSNumber.class]) {
+        return rawContentType;
+    }
+    if([rawContentType isKindOfClass:NSString.class]) {
+        NSString *typeText = (NSString *)rawContentType;
+        if([typeText isEqualToString:@"rtc_notice"] || [typeText isEqualToString:@"rtc_record"]) {
+            return @(WKChatManagerRTCCallContentType);
+        }
+        return @([typeText integerValue]);
+    }
+    return @(0);
+}
+
 @interface WKChatManager ()
 
 /**
@@ -1446,7 +1462,7 @@
          NSLog(@"消息内容非JSON格式！");
         return nil;
     }
-     NSNumber *actContentType = [contentDict objectForKey:@"type"];
+    NSNumber *actContentType = WKChatManagerNormalizePayloadContentType([contentDict objectForKey:@"type"]);
     WKMessageContent *messageContent;
     if(!contentType) {
         messageContent = [[WKUnknownContent alloc] init];

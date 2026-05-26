@@ -28,8 +28,8 @@ TODO: Add long description of the pod here.
   s.source           = { :git => 'https://github.com/tangtaoit/WuKongBase.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '12.0'
-  s.platform     = :ios, '12.0'
+  s.ios.deployment_target = '15.0'
+  s.platform     = :ios, '15.0'
   
   s.resource_bundles = {
     'WuKongBase_images' => ['WuKongBase/Assets/Images.xcassets'],
@@ -41,7 +41,10 @@ TODO: Add long description of the pod here.
   
  
   s.private_header_files = 'WuKongBase/Classes/Vendor/**/*'
-  s.source_files = 'WuKongBase/Classes/**/*'
+  s.source_files = 'WuKongBase/Classes/**/*.{h,m,mm,c,cc,cpp,swift}'
+  s.exclude_files = [
+    'WuKongBase/Classes/Sections/Common/TelegramUtils/GZip/GZip.h'
+  ]
 #  s.preserve_paths = 'ios/arm/*.{a}'
 #   s.vendored_frameworks  = 'ios/WuKongIMSDK.framework'
   
@@ -108,7 +111,7 @@ TODO: Add long description of the pod here.
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
 #  s.xcconfig = { 'LIBRARY_SEARCH_PATHS' => '/Users/tt/work/projects/mos/WuKongIMDemo/Modules/WuKongBase/ios/arm',"OTHER_LDFLAGS" => "-ObjC" }
-  s.frameworks = 'UIKit', 'MapKit', 'AVFoundation'
+  s.frameworks = 'UIKit', 'MapKit', 'AVFoundation', 'QuickLook', 'CallKit'
   # s.dependency 'AFNetworking', '~> 2.3'
   
   

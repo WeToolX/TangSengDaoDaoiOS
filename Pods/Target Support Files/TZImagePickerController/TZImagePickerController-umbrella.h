@@ -10,23 +10,23 @@
 #endif
 #endif
 
-#import "NSBundle+TZImagePicker.h"
-#import "TZAssetCell.h"
-#import "TZAssetModel.h"
-#import "TZGifPhotoPreviewController.h"
-#import "TZImageCropManager.h"
-#import "TZImageManager.h"
-#import "TZImagePickerController.h"
-#import "TZImageRequestOperation.h"
-#import "TZLocationManager.h"
-#import "TZPhotoPickerController.h"
-#import "TZPhotoPreviewCell.h"
-#import "TZPhotoPreviewController.h"
-#import "TZProgressView.h"
-#import "TZVideoCropController.h"
-#import "TZVideoEditedPreviewController.h"
-#import "TZVideoPlayerController.h"
-#import "UIView+TZLayout.h"
+#import <TZImagePickerController/NSBundle+TZImagePicker.h>
+#import <TZImagePickerController/TZAssetCell.h>
+#import <TZImagePickerController/TZAssetModel.h>
+#import <TZImagePickerController/TZGifPhotoPreviewController.h>
+#import <TZImagePickerController/TZImageCropManager.h>
+#import <TZImagePickerController/TZImageManager.h>
+#import <TZImagePickerController/TZImagePickerController.h>
+#import <TZImagePickerController/TZImageRequestOperation.h>
+#import <TZImagePickerController/TZLocationManager.h>
+#import <TZImagePickerController/TZPhotoPickerController.h>
+#import <TZImagePickerController/TZPhotoPreviewCell.h>
+#import <TZImagePickerController/TZPhotoPreviewController.h>
+#import <TZImagePickerController/TZProgressView.h>
+#import <TZImagePickerController/TZVideoCropController.h>
+#import <TZImagePickerController/TZVideoEditedPreviewController.h>
+#import <TZImagePickerController/TZVideoPlayerController.h>
+#import <TZImagePickerController/UIView+TZLayout.h>
 
 FOUNDATION_EXPORT double TZImagePickerControllerVersionNumber;
 FOUNDATION_EXPORT const unsigned char TZImagePickerControllerVersionString[];

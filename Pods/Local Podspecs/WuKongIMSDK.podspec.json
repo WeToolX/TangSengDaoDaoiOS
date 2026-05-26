@@ -15,7 +15,7 @@
     "git": "https://github.com/WuKongIM/WuKongIMiOSSDK.git"
   },
   "platforms": {
-    "ios": "11.0"
+    "ios": "15.0"
   },
   "requires_arc": true,
   "vendored_libraries": "WuKongIMSDK/Classes/private/arm/lib/*.a",
@@ -25,7 +25,7 @@
     "opencore-amrwb",
     "vo-amrwbenc"
   ],
-  "source_files": "WuKongIMSDK/Classes/**/*",
+  "source_files": "WuKongIMSDK/Classes/**/*.{h,m,mm,c,cc,cpp,swift}",
   "public_header_files": "WuKongIMSDK/Classes/**/*.h",
   "private_header_files": "WuKongIMSDK/Classes/private/**/*.h",
   "frameworks": [

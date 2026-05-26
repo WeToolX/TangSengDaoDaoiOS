@@ -21,6 +21,7 @@
 #import "WuKongBase.h"
 #import "WKOnlineStatusManager.h"
 #import "WKMySettingManager.h"
+#import "WKRTCSessionManager.h"
 @interface WKSystemMessageHandler ()<WKChatManagerDelegate,WKConnectionManagerDelegate,WKCMDManagerDelegate>
 
 @property(nonatomic,strong) dispatch_queue_t systemMessageHandlerQueue;
@@ -281,6 +282,10 @@ bool needRemind = false; // 是否需要提醒
 }
 
 -(void) handleCMD:(NSString*)cmd param:(NSDictionary*)param {
+    if([cmd hasPrefix:@"rtc."]) { // RTC 音视频通话命令
+        [[WKRTCSessionManager shared] handleRTCCommand:cmd param:param];
+        return;
+    }
     if([cmd isEqualToString:WKCMDMemberUpdate]) { // 群成员更新
         WKLogDebug(@"处理群成员更新命令！");
         if(param&&param[@"group_no"]) {

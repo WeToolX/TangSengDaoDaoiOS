@@ -10,13 +10,13 @@
 #endif
 #endif
 
-#import "demux.h"
-#import "mux.h"
-#import "decode.h"
-#import "encode.h"
-#import "types.h"
-#import "mux_types.h"
-#import "format_constants.h"
+#import <libwebp/demux.h>
+#import <libwebp/mux.h>
+#import <libwebp/decode.h>
+#import <libwebp/encode.h>
+#import <libwebp/types.h>
+#import <libwebp/mux_types.h>
+#import <libwebp/format_constants.h>
 
 FOUNDATION_EXPORT double libwebpVersionNumber;
 FOUNDATION_EXPORT const unsigned char libwebpVersionString[];

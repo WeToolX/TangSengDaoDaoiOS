@@ -161,7 +161,7 @@ typedef void (^WKAudioPlayerDidProgressBlock)(AVAudioPlayer *player);
  *
  *  @param filePath 文件路径
  */
--(void) playAudio:(NSString *)filePath playerDidFinish:(WKAudioPlayerDidFinishBlock)finishBlock progress:(WKAudioPlayerDidProgressBlock)progressBlock;
+-(BOOL) playAudio:(NSString *)filePath playerDidFinish:(WKAudioPlayerDidFinishBlock)finishBlock progress:(WKAudioPlayerDidProgressBlock)progressBlock;
 
 /**
  *  停止播放音频

@@ -10,21 +10,21 @@
 #endif
 #endif
 
-#import "MASCompositeConstraint.h"
-#import "MASConstraint+Private.h"
-#import "MASConstraint.h"
-#import "MASConstraintMaker.h"
-#import "MASLayoutConstraint.h"
-#import "Masonry.h"
-#import "MASUtilities.h"
-#import "MASViewAttribute.h"
-#import "MASViewConstraint.h"
-#import "NSArray+MASAdditions.h"
-#import "NSArray+MASShorthandAdditions.h"
-#import "NSLayoutConstraint+MASDebugAdditions.h"
-#import "View+MASAdditions.h"
-#import "View+MASShorthandAdditions.h"
-#import "ViewController+MASAdditions.h"
+#import <Masonry/MASCompositeConstraint.h>
+#import <Masonry/MASConstraint+Private.h>
+#import <Masonry/MASConstraint.h>
+#import <Masonry/MASConstraintMaker.h>
+#import <Masonry/MASLayoutConstraint.h>
+#import <Masonry/Masonry.h>
+#import <Masonry/MASUtilities.h>
+#import <Masonry/MASViewAttribute.h>
+#import <Masonry/MASViewConstraint.h>
+#import <Masonry/NSArray+MASAdditions.h>
+#import <Masonry/NSArray+MASShorthandAdditions.h>
+#import <Masonry/NSLayoutConstraint+MASDebugAdditions.h>
+#import <Masonry/View+MASAdditions.h>
+#import <Masonry/View+MASShorthandAdditions.h>
+#import <Masonry/ViewController+MASAdditions.h>
 
 FOUNDATION_EXPORT double MasonryVersionNumber;
 FOUNDATION_EXPORT const unsigned char MasonryVersionString[];

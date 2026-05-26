@@ -355,18 +355,23 @@
 }
 #pragma mark----现在处理视频的
 -(void)sendVieoMsg{
-    UIImage * fisrtImage = [self getVideoPreViewImage:_VIDEO_OUTPUTFILE];
-    if (!fisrtImage) {
-        return;
-    }
-    NSData * fisrtImageData  = UIImageJPEGRepresentation(fisrtImage, 0.5f);
-//    NSData * videoData  =[NSData dataWithContentsOfURL:self.recordVideoUrl];
-    //    NSData * videoData  =[NSData dataWithContentsOfURL:_VIDEO_OUTPUTFILE];
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    [fileManager createFileAtPath:[self getTmpCoverImgPath] contents:fisrtImageData attributes:nil];
-    if (self.videoBlock) {
-        self.videoBlock([self getTmpCoverImgPath], self.recordVideoUrl.path);
-    }
+    __weak typeof(self) weakSelf = self;
+    NSURL *outputURL = _VIDEO_OUTPUTFILE;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        UIImage *fisrtImage = [weakSelf getVideoPreViewImage:outputURL];
+        if (!fisrtImage) {
+            return;
+        }
+        NSData *fisrtImageData  = UIImageJPEGRepresentation(fisrtImage, 0.5f);
+        NSString *coverPath = [weakSelf getTmpCoverImgPath];
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        [fileManager createFileAtPath:coverPath contents:fisrtImageData attributes:nil];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (weakSelf.videoBlock) {
+                weakSelf.videoBlock(coverPath, weakSelf.recordVideoUrl.path);
+            }
+        });
+    });
 }
 
 -(NSString*) getTmpCoverImgPath {
@@ -383,8 +388,8 @@
     NSError *error = nil;
     CMTime actualTime;
     CGImageRef image = [assetGen copyCGImageAtTime:time actualTime:&actualTime error:&error];
-    UIImage *videoImage = [[UIImage alloc] initWithCGImage:image];
-    CGImageRelease(image);
+    UIImage *videoImage = image ? [[UIImage alloc] initWithCGImage:image] : nil;
+    if(image) CGImageRelease(image);
     return videoImage;
 }
 #pragma mark------压缩视频

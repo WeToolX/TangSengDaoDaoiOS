@@ -154,7 +154,7 @@ static WKPhotoBrowser *_instance;
             session.videoComposition = [WKPhotoBrowser getVideoComposition:avasset];  //修正某些播放器不识别视频Rotation的问题
             [session exportAsynchronouslyWithCompletionHandler:^(void) {
                  dispatch_async(dispatch_get_main_queue(), ^{
-                     if (session.status == AVAssetExportSessionStatusCompleted){
+                     if (session.status == AVAssetExportSessionStatusCompleted && session.outputURL.absoluteString.length > 0){
                          completion(session.outputURL.absoluteString);
                      } else {
                          completion(nil);
@@ -236,7 +236,11 @@ static WKPhotoBrowser *_instance;
 
 + (AVMutableVideoComposition *)getVideoComposition:(AVAsset *)asset
 {
-    AVAssetTrack *videoTrack = [[asset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
+    NSArray<AVAssetTrack *> *videoTracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+    if(videoTracks.count == 0) {
+        return nil;
+    }
+    AVAssetTrack *videoTrack = videoTracks.firstObject;
     AVMutableComposition *composition = [AVMutableComposition composition];
     AVMutableVideoComposition *videoComposition = [AVMutableVideoComposition videoComposition];
     CGSize videoSize = videoTrack.naturalSize;
@@ -247,10 +251,16 @@ static WKPhotoBrowser *_instance;
     composition.naturalSize     = videoSize;
     videoComposition.renderSize = videoSize;
     
-    videoComposition.frameDuration = CMTimeMakeWithSeconds( 1 / videoTrack.nominalFrameRate, 600);
+    Float64 frameRate = videoTrack.nominalFrameRate > 0 ? videoTrack.nominalFrameRate : 30.0f;
+    videoComposition.frameDuration = CMTimeMakeWithSeconds(1.0 / frameRate, 600);
     AVMutableCompositionTrack *compositionVideoTrack;
     compositionVideoTrack = [composition addMutableTrackWithMediaType:AVMediaTypeVideo preferredTrackID:kCMPersistentTrackID_Invalid];
-    [compositionVideoTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, asset.duration) ofTrack:videoTrack atTime:kCMTimeZero error:nil];
+    NSError *insertError;
+    [compositionVideoTrack insertTimeRange:CMTimeRangeMake(kCMTimeZero, asset.duration) ofTrack:videoTrack atTime:kCMTimeZero error:&insertError];
+    if(insertError) {
+        WKLogError(@"video composition insert track fail: %@", insertError);
+        return nil;
+    }
     AVMutableVideoCompositionLayerInstruction *layerInst;
     layerInst = [AVMutableVideoCompositionLayerInstruction videoCompositionLayerInstructionWithAssetTrack:videoTrack];
     [layerInst setTransform:videoTrack.preferredTransform atTime:kCMTimeZero];

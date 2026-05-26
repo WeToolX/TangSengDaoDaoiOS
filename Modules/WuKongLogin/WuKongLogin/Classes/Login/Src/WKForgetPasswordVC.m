@@ -98,10 +98,7 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
 }
 
 - (NSString *)country {
-    if(!_country) {
-        return @"86";
-    }
-    return _country;
+    return @"86";
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
@@ -156,7 +153,7 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
         
         [[_countryBtn titleLabel] setFont:WKApp.shared.config.defaultFont];
         [_countryBtn setTitleColor:WKApp.shared.config.defaultTextColor forState:UIControlStateNormal];
-        [_countryBtn addTarget:self action:@selector(countryBtnPressed) forControlEvents:UIControlEventTouchUpInside];
+        _countryBtn.userInteractionEnabled = NO;
     }
     return _countryBtn;
 }
@@ -164,11 +161,12 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
     if(!_downArrowView) {
         _downArrowView = [[UIImageView alloc] initWithFrame:CGRectMake(self.countryBtn.lim_right-12.0f, self.mobileBoxView.lim_height/2.0f - 6.0f, 12.0f, 12.0f)];
         [_downArrowView setImage:[[WKApp shared] loadImage:@"ArrowDown" moduleID:@"WuKongLogin"]];
+        _downArrowView.hidden = YES;
     }
     return _downArrowView;
 }
 -(void) updateCountryBtnTitle {
-    [self.countryBtn setTitle:[NSString stringWithFormat:@"+ %@",_country] forState:UIControlStateNormal];
+    [self.countryBtn setTitle:[NSString stringWithFormat:@"+ %@",self.country] forState:UIControlStateNormal];
 }
 - (UIView *)countrySpliteLineView {
     if(!_countrySpliteLineView) {
@@ -326,21 +324,6 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
     btn.selected = !btn.selected;
     _passwordTextField.secureTextEntry = !btn.selected;
 }
-// 国家点击
--(void) countryBtnPressed {
-    WKCountrySelectVC *vc = [WKCountrySelectVC new];
-    vc.onFinished = ^(NSDictionary *data) {
-        self->_country = [data[@"code"] stringByReplacingCharactersInRange:NSMakeRange(0, 2) withString:@""];
-        if(self.mobileTextField.text.length>11) {
-            self.mobileTextField.text = [self.mobileTextField.text substringToIndex:11];
-        }
-        [self updateCountryBtnTitle];
-    };
-    
-    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
-    nav.modalPresentationStyle = UIModalPresentationFullScreen;
-    [[[WKNavigationManager shared] topViewController] presentViewController:nav animated:YES completion:nil];
-}
 // 获取验证码
 -(void) sendCode {
     int now = [[NSDate date] timeIntervalSince1970];
@@ -445,7 +428,7 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
     
     if(textField == self.mobileTextField) {
         NSInteger strLength = textField.text.length - range.length + string.length;
-        if([_country isEqualToString:@"86"]) {
+        if([self.country isEqualToString:@"86"]) {
             return (strLength <= 11); // 大陆电话号码为11位
         }
         

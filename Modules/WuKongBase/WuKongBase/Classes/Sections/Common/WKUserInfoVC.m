@@ -33,10 +33,6 @@
 @property(nonatomic,strong) UIButton *sendBtn; // 发送消息
 @property(nonatomic,strong) UIButton *addFriendBtn; // 添加好友
 
-// ---------- 视频通话 ----------
-@property(nonatomic,strong) UIButton *videoCallBtn; // 视频通话ß
-@property(nonatomic,strong) videoCallSupportInvoke videocallInvoke;
-
 // ---------- tableFooter ----------
 @property(nonatomic,strong) UIView *tableFooterView;
 @property(nonatomic,strong) UIView *tipView;
@@ -61,7 +57,6 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.videocallInvoke = [[WKApp shared] invoke:WKPOINT_VIDEOCALL_SUPPORT_FNC param:@{@"channel":[WKChannel personWithChannelID:self.uid]}];
     // header
     self.tableView.tableHeaderView = self.userHeader;
     [self.userHeader addSubview:self.userAvatarView];
@@ -71,9 +66,6 @@
     
     // footer
     [self.view addSubview:self.footerHeader];
-    if(self.videocallInvoke && ![WKApp.shared isSystemAccount:self.uid]) {
-        [self.footerHeader addSubview:self.videoCallBtn];
-    }
     [self.footerHeader addSubview:self.sendBtn];
     [self.footerHeader addSubview:self.addFriendBtn];
     
@@ -394,10 +386,6 @@
     if(!_sendBtn) {
         CGFloat width = self.view.lim_width - bottomBtnSpace*2;
         CGFloat leftSpace = self.footerHeader.lim_width/2.0f - width/2.0f;
-        if(self.videocallInvoke) {
-            width = (self.view.lim_width - bottomBtnSpace*3)/2.0f;
-            leftSpace = self.videoCallBtn.lim_right + bottomBtnSpace;
-        }
         _sendBtn = [[UIButton alloc] initWithFrame:CGRectMake(leftSpace, 0.0f, width, 40.0f)];
         [_sendBtn setBackgroundColor:[WKApp shared].config.themeColor];
         [[_sendBtn titleLabel] setFont:[[WKApp shared].config appFontOfSize:16.0f]];
@@ -410,29 +398,6 @@
         [_sendBtn addTarget:self action:@selector(sendBtnPressed) forControlEvents:UIControlEventTouchUpInside];
     }
     return _sendBtn;
-}
-
-- (UIButton *)videoCallBtn {
-    if(!_videoCallBtn) {
-        CGFloat width = (self.view.lim_width - bottomBtnSpace*3)/2.0f;
-        CGFloat leftSpace = bottomBtnSpace;
-        _videoCallBtn = [[UIButton alloc] initWithFrame:CGRectMake(leftSpace, 15.0f, width, 40.0f)];
-        [_videoCallBtn setBackgroundColor:[UIColor colorWithRed:243.0f/255.0f green:243.0f/255.0f blue:243.0f/255.0f alpha:1.0f]];
-        [[_videoCallBtn titleLabel] setFont:[[WKApp shared].config appFontOfSize:16.0f]];
-        [_videoCallBtn setTitle:LLang(@"视频通话") forState:UIControlStateNormal];
-         [_videoCallBtn setImage:[self imageName:@"Common/Index/IconVideocall"] forState:UIControlStateNormal];
-         [_videoCallBtn setImageEdgeInsets:UIEdgeInsetsMake(2.0f, 0.0f, 0.0f, 4.0f)];
-         _videoCallBtn.layer.masksToBounds = YES;
-         _videoCallBtn.layer.cornerRadius = 4.0f;
-        if([WKApp shared].config.style == WKSystemStyleDark) {
-            [_videoCallBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-        }else{
-            [_videoCallBtn setTitleColor:[WKApp shared].config.defaultTextColor forState:UIControlStateNormal];
-        }
-       
-         [_videoCallBtn addTarget:self action:@selector(videocallBtnPressed) forControlEvents:UIControlEventTouchUpInside];
-    }
-    return _videoCallBtn;
 }
 
 
@@ -505,12 +470,6 @@
     WKConversationVC *conversationVC = [WKConversationVC new];
     conversationVC.channel = self.viewModel.channelInfo.channel;
     [[WKNavigationManager shared] pushViewController:conversationVC animated:YES];
-}
-// 视频通话
--(void) videocallBtnPressed {
-    if(self.videocallInvoke) {
-        self.videocallInvoke([WKChannel personWithChannelID:self.uid],WKCallTypeAll);
-    }
 }
 // 添加好友
 -(void) addFriendPressed {

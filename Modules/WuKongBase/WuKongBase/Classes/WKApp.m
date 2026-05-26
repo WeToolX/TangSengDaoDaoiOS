@@ -42,6 +42,10 @@
 #import "WKWebViewVC.h"
 #import "WKCardContent.h"
 #import "WKCardCell.h"
+#import "WKFileContent.h"
+#import "WKFileMessageCell.h"
+#import "WKSmallVideoContent.h"
+#import "WKSmallVideoMessageCell.h"
 #import "WKUserInfoVC.h"
 #import "WKMeInfoVC.h"
 #import "WKMeItem.h"
@@ -74,10 +78,14 @@
 #import <WuKongIMSDK/WKSignalErrorContent.h>
 #import "WKEmojiStickerCell.h"
 #import "WKEmojiStickerContent.h"
+#import "WKRTCMessageCell.h"
+#import "WKRTCMessageContent.h"
 #import "WKSDImageLottieCoder.h"
 #import "WKSecurityTipManager.h"
 #import "WKConversationListVM.h"
 #import <WuKongBase/WuKongBase-Swift.h>
+#import "WKStickerStoreListVC.h"
+#import "WKStickerStoreVM.h"
 #import "WKStickerCollectionVC.h"
 #import "WKKeyboardService.h"
 #import <ZLPhotoBrowser/ZLPhotoBrowser-Swift.h>
@@ -85,11 +93,17 @@
 #import <Bugly/Bugly.h>
 #import "WKMyInviteCodeVC.h"
 #import "WKProhibitwordsService.h"
+#import "WKSecurityPrivacyVC.h"
+#import "WKFavoriteListVC.h"
+#import "WKFavoriteVM.h"
+#import "WKFavoriteTipView.h"
 
 @import FPSCounter.Swift;
 //#import <PINRemoteImage/PINImageView+PINRemoteImage.h>
 //#import <PINRemoteImage/PINRemoteImageCaching.h>
 typedef void(^WKOnComplete)(id data,NSError *error);
+
+static NSString * const WKDisableScreenshotKey = @"security.disable_screenshot";
 
 
 
@@ -112,6 +126,9 @@ typedef void(^WKOnComplete)(id data,NSError *error);
 @property(nonatomic,assign) BOOL isShowLockScreenProtect; // 是否显示了锁屏密码
 @property(nonatomic,assign) BOOL isShowScreenProtect; // 是否显示屏幕保护
 @property(nonatomic,strong) WKScreenProtectionView *screenProtectionView; // 屏幕保护view
+@property(nonatomic,strong) UITextField *screenshotProtectionTextField;
+@property(nonatomic,weak) UIWindow *screenshotProtectionWindow;
+@property(nonatomic,assign) BOOL screenshotProtectionInstalled;
 
 
 
@@ -220,6 +237,8 @@ static WKApp *_instance;
 //    [self.messageRegitry registerCellClass:[WKSystemMessageCell class] forMessageContentClass:[WKSystemContent class]]; // 系统消息
     [self.messageRegitry registerCellClass:[WKGIFMessageCell class] forMessageContentClass:[WKGIFContent class]]; // GIF消息
     [self.messageRegitry registerCellClass:[WKCardCell class] forMessageContentClass:[WKCardContent class]]; // 名片消息
+    [self.messageRegitry registerCellClass:[WKFileMessageCell class] forMessageContentClass:[WKFileContent class]]; // 文件消息
+    [self.messageRegitry registerCellClass:[WKSmallVideoMessageCell class] forMessageContentClass:[WKSmallVideoContent class]]; // 小视频消息
      [self.messageRegitry registerCellClass:[WKTypingMessageCell class] forMessageContentClass:[WKTypingContent class]]; // 输入中...
     [self.messageRegitry registerCellClass:WKMergeForwardCell.class forMessageContentClass:WKMergeForwardContent.class];
     // 历史消息分割线
@@ -229,6 +248,7 @@ static WKApp *_instance;
     [self.messageRegitry registerCellClass:WKScreenshotCell.class forMessageContentClass:WKScreenshotContent.class]; // 截屏通知
     [self.messageRegitry registerCellClass:WKLottieStickerCell.class forMessageContentClass:WKLottieStickerContent.class]; // lottie格式的贴图
     [self.messageRegitry registerCellClass:WKEmojiStickerCell.class forMessageContentClass:WKEmojiStickerContent.class];
+    [self.messageRegitry registerCellClass:WKRTCMessageCell.class forMessageContentClass:WKRTCMessageContent.class]; // RTC 持久消息卡片
 }
 
 -(void) traceConfig {
@@ -293,6 +313,7 @@ static WKApp *_instance;
     [self configSDWebImage];
 
     [self addNotifies];
+    [self updateScreenshotProtection];
     
    
     [[WKNetworkListener shared] addDelegate:self];
@@ -438,6 +459,53 @@ static WKApp *_instance;
 //    [[SDWebImageManager sharedManager] setCacheKeyFilter:[[SDWebImageCacheKeyFilter alloc] initWithBlock:^NSString * _Nullable(NSURL * _Nonnull url) {
 //        return [url absoluteString];
 //    }]];
+}
+
+#pragma mark - 截图保护
+
+-(void) updateScreenshotProtection {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:WKDisableScreenshotKey];
+        [self setScreenshotProtectionEnabled:enabled];
+    });
+}
+
+-(void) setScreenshotProtectionEnabled:(BOOL)enabled {
+    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    if(!window) {
+        return;
+    }
+    if(!self.screenshotProtectionInstalled || self.screenshotProtectionWindow != window) {
+        [self installScreenshotProtectionInWindow:window];
+    }
+    self.screenshotProtectionTextField.secureTextEntry = enabled;
+}
+
+-(void) installScreenshotProtectionInWindow:(UIWindow*)window {
+    UITextField *textField = [[UITextField alloc] initWithFrame:window.bounds];
+    textField.backgroundColor = [UIColor clearColor];
+    textField.textColor = [UIColor clearColor];
+    textField.tintColor = [UIColor clearColor];
+    textField.userInteractionEnabled = NO;
+    textField.secureTextEntry = YES;
+    textField.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [window addSubview:textField];
+    
+    CALayer *secureLayer = textField.layer.sublayers.lastObject;
+    CALayer *windowLayer = window.layer;
+    CALayer *superLayer = windowLayer.superlayer;
+    if(secureLayer && superLayer && windowLayer.superlayer != secureLayer) {
+        [superLayer addSublayer:textField.layer];
+        [secureLayer addSublayer:windowLayer];
+        self.screenshotProtectionTextField = textField;
+        self.screenshotProtectionWindow = window;
+        self.screenshotProtectionInstalled = true;
+    }else {
+        [textField removeFromSuperview];
+        self.screenshotProtectionTextField = nil;
+        self.screenshotProtectionWindow = nil;
+        self.screenshotProtectionInstalled = false;
+    }
 }
 
 // 进入app
@@ -880,6 +948,20 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
     return _allowFavorites;
 }
 
+- (NSString *)writeSmallVideoTempData:(NSData *)data ext:(NSString *)ext {
+    if (data.length == 0) {
+        return @"";
+    }
+    NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:@"small_video_send"];
+    [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
+    NSString *fileName = [NSString stringWithFormat:@"%@.%@", [[NSUUID UUID] UUIDString], ext ?: @"tmp"];
+    NSString *path = [dir stringByAppendingPathComponent:fileName];
+    if ([data writeToFile:path atomically:YES]) {
+        return path;
+    }
+    return @"";
+}
+
 
 - (unsigned long long)calculateVideoCachedSizeWithError:(NSError **)error {
     NSFileManager *fileManager = [NSFileManager defaultManager];
@@ -1090,6 +1172,13 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
         return item;
     } category:WKPOINT_CATEGORY_PANELFUNCITEM];
     
+    // small video
+    [self setMethod:WKPOINT_CATEGORY_PANELFUNCITEM_VIDEO handler:^id _Nullable(id  _Nonnull param) {
+        WKPanelDefaultFuncItem *item = [[WKPanelVideoFuncItem alloc] init];
+        item.sort = 3500;
+        return item;
+    } category:WKPOINT_CATEGORY_PANELFUNCITEM];
+    
     // @
     [self setMethod:WKPOINT_CATEGORY_PANELFUNCITEM_MENTION handler:^id _Nullable(id  _Nonnull param) {
         id<WKConversationContext> context = param[@"context"];
@@ -1108,6 +1197,38 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
         item.sort = 5000;
         return item;
     } category:WKPOINT_CATEGORY_PANELFUNCITEM];
+    
+    // file
+    [self setMethod:WKPOINT_CATEGORY_PANELFUNCITEM_FILE handler:^id _Nullable(id  _Nonnull param) {
+        WKPanelFileFuncItem *item = [[WKPanelFileFuncItem alloc] init];
+        item.sort = 6000;
+        return item;
+    } category:WKPOINT_CATEGORY_PANELFUNCITEM];
+    
+    [self setMethod:WKPOINT_SEND_VIDEO handler:^id _Nullable(id  _Nonnull param) {
+        id<WKConversationContext> context = param[@"context"];
+        if (!context) {
+            return nil;
+        }
+        NSString *videoPath = param[@"video_path"];
+        NSString *coverPath = param[@"cover_path"];
+        if (videoPath.length == 0 && [param[@"video_data"] isKindOfClass:NSData.class]) {
+            videoPath = [self writeSmallVideoTempData:param[@"video_data"] ext:@"mp4"];
+        }
+        if (coverPath.length == 0 && [param[@"cover_data"] isKindOfClass:NSData.class]) {
+            coverPath = [self writeSmallVideoTempData:param[@"cover_data"] ext:@"jpg"];
+        }
+        if (videoPath.length == 0) {
+            return nil;
+        }
+        WKSmallVideoContent *content = [WKSmallVideoContent videoContentWithVideoPath:videoPath coverPath:coverPath];
+        NSNumber *second = param[@"second"];
+        if (second) {
+            content.duration = second.integerValue;
+        }
+        [context sendMessage:content];
+        return nil;
+    } category:nil];
     
 
     
@@ -1148,6 +1269,14 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
     [self setMethod:WKPOINT_TO_STICKER_COLLECTION handler:^id _Nullable(id  _Nonnull param) {
         WKStickerCollectionVC *vc = [WKStickerCollectionVC new];
         [vc setDataArray:param[@"data"]];
+        [[WKNavigationManager shared] pushViewController:vc animated:YES];
+        return nil;
+    }];
+    
+    WKStickerStoreVM *stickerStoreProvider = [WKStickerStoreVM new];
+    [WKStickerManager shared].stickerProvider = stickerStoreProvider;
+    [self setMethod:WKPOINT_TO_STICKER_STORE handler:^id _Nullable(id  _Nonnull param) {
+        WKStickerStoreListVC *vc = [WKStickerStoreListVC new];
         [[WKNavigationManager shared] pushViewController:vc animated:YES];
         return nil;
     }];
@@ -1288,6 +1417,7 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
     [[WKApp shared] addMessageAllowForward:WK_TEXT];
     [[WKApp shared] addMessageAllowForward:WK_IMAGE];
     [[WKApp shared] addMessageAllowForward:WK_GIF];
+    [[WKApp shared] addMessageAllowForward:WK_SMALLVIDEO];
     [self setMethod:WKPOINT_LONGMENUS_FORWARD handler:^id _Nullable(id  _Nonnull param) {
         WKMessageModel *message = param[@"message"];
         
@@ -1316,6 +1446,71 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
     
     
    
+    
+    // 收藏
+    [[WKApp shared] addMessageAllowFavorite:WK_TEXT];
+    [[WKApp shared] addMessageAllowFavorite:WK_IMAGE];
+    [self setMethod:WKPOINT_LONGMENUS_FAVORITE handler:^id _Nullable(id  _Nonnull param) {
+        WKMessageModel *message = param[@"message"];
+        if(message.status != WK_MESSAGE_SUCCESS || message.messageId == 0 || message.messageSeq == 0) {
+            return nil;
+        }
+        if(![[WKApp shared] allowMessageFavorite:message.contentType]) {
+            return nil;
+        }
+        UIImage *icon = [GenerateImageUtils generateTintedImgWithImage:[weakSelf imageName:@"Conversation/ContextMenu/Favorites"] color:weakSelf.config.contextMenu.primaryColor backgroundColor:nil];
+        return [WKMessageLongMenusItem initWithTitle:LLangW(@"收藏", weakSelf) icon:icon onTap:^(id<WKConversationContext> context){
+            UIView *topView = [WKNavigationManager shared].topViewController.view;
+            [[WKFavoriteVM new] toggleFavorite:message].then(^(NSDictionary *result) {
+                BOOL isFavorite = [result[@"is_favorite"] integerValue] == 1;
+                if(isFavorite) {
+                    [WKFavoriteTipView showInView:topView action:^{
+                        [[WKNavigationManager shared] pushViewController:[WKFavoriteListVC new] animated:YES];
+                    }];
+                }else {
+                    [topView showHUDWithHide:LLangW(@"已取消收藏", weakSelf)];
+                }
+            }).catch(^(NSError *error) {
+                [topView showHUDWithHide:error.domain];
+            });
+        }];
+    } category:WKPOINT_CATEGORY_MESSAGE_LONGMENUS sort:2850];
+    
+    // 双向删除
+    [self setMethod:@"longmenus.mutualdelete" handler:^id _Nullable(id  _Nonnull param) {
+        WKMessageModel *message = param[@"message"];
+        if(!message || !message.channel.channelId || message.channel.channelId.length == 0) {
+            return nil;
+        }
+        if(message.messageId == 0 || message.messageSeq == 0 || message.message.isDeleted || message.revoke || message.remoteExtra.isMutualDeleted) {
+            return nil;
+        }
+        if(message.content.flame || message.contentType == WK_SCREENSHOT || [[WKSDK shared] isSystemMessage:message.contentType] || message.contentType == WK_CMD || message.contentType == WK_HISTORY_SPLIT) {
+            return nil;
+        }
+        UIImage *icon = [GenerateImageUtils generateTintedImgWithImage:[weakSelf imageName:@"Conversation/ContextMenu/Delete"] color:weakSelf.config.contextMenu.primaryColor backgroundColor:nil];
+        return [WKMessageLongMenusItem initWithTitle:LLangW(@"双向删除",weakSelf) icon:icon onTap:^(id<WKConversationContext> context){
+            WKActionSheetView2 *sheet = [WKActionSheetView2 initWithTip:LLangW(@"确认双向删除该消息？", weakSelf)];
+            [sheet addItem:[WKActionSheetButtonItem2 initWithAlertTitle:LLangW(@"双向删除", weakSelf) onClick:^{
+                UIView *topView = [WKNavigationManager shared].topViewController.view;
+                [topView showHUD];
+                [[WKAPIClient sharedClient] DELETE:@"message/mutual" parameters:@{
+                    @"channel_id":message.channel.channelId?:@"",
+                    @"channel_type":@(message.channel.channelType),
+                    @"message_id":[NSString stringWithFormat:@"%llu",message.messageId],
+                    @"message_seq":@(message.messageSeq),
+                }].then(^{
+                    [topView hideHud];
+                    [[WKSDK shared].chatManager deleteMessage:message.message];
+                    [[WKSDK shared].chatManager syncMessageExtra:message.channel complete:nil];
+                }).catch(^(NSError *error) {
+                    [topView hideHud];
+                    [topView showHUDWithHide:error.domain?:LLangW(@"双向删除失败", weakSelf)];
+                });
+            }]];
+            [sheet show];
+        }];
+    } category:WKPOINT_CATEGORY_MESSAGE_LONGMENUS sort:980];
     
     // 删除
     [self setMethod:WKPOINT_LONGMENUS_DELETE handler:^id _Nullable(id  _Nonnull param) {
@@ -1424,6 +1619,13 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
     
     
     // ---------- 我的  ----------
+    // 我的收藏
+    [self setMethod:WKPOINT_ME_FAVORITE handler:^id _Nullable(id  _Nonnull param) {
+        return [WKMeItem initWithTitle:LLangW(@"我的收藏",weakSelf) icon:[weakSelf imageName:@"Me/Index/IconFavorite"] onClick:^{
+            [[WKNavigationManager shared] pushViewController:[WKFavoriteListVC new] animated:YES];
+        }];
+    } category:WKPOINT_CATEGORY_ME sort:19000];
+    
     // PC端
     [self setMethod:WKPOINT_ME_WEB handler:^id _Nullable(id  _Nonnull param) {
         return [WKMeItem initWithTitle:LLangW(@"网页端",weakSelf) icon:[weakSelf imageName:@"Me/Index/IconPC"] nextSectionHeight:10.0f onClick:^{
@@ -1446,6 +1648,13 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
              [[WKNavigationManager shared] pushViewController:[WKMyInviteCodeVC new] animated:YES];
         }];
     } category:WKPOINT_CATEGORY_ME sort:7900];
+    
+    // 安全与隐私
+    [self setMethod:WKPOINT_ME_SECURITY handler:^id _Nullable(id  _Nonnull param) {
+        return [WKMeItem initWithTitle:LLangW(@"安全与隐私",weakSelf) icon:[weakSelf imageName:@"Me/Index/IconSecurityPrivacy"] onClick:^{
+             [[WKNavigationManager shared] pushViewController:[WKSecurityPrivacyVC new] animated:YES];
+        }];
+    } category:WKPOINT_CATEGORY_ME sort:7800];
    
    
    
@@ -1542,7 +1751,9 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
     __weak typeof(self) weakSelf = self;
     vc.onFinished = ^(NSString * _Nonnull pwd) {
         weakSelf.isShowLockScreenProtect = false;
-        [weakVC dismissViewControllerAnimated:YES completion:nil];
+        [weakVC dismissViewControllerAnimated:YES completion:^{
+            [weakSelf showScreenProtectIfNeed];
+        }];
     };
     [[WKNavigationManager shared].topViewController presentViewController:vc animated:NO completion:nil];
 }
@@ -1558,6 +1769,9 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
 
 
 -(void) showScreenProtectIfNeed {
+    if(self.isShowLockScreenProtect) {
+        return;
+    }
 
     BOOL showProtect = false;
     if([WKMySettingManager shared].offlineProtection) {

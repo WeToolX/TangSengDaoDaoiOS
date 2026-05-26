@@ -94,7 +94,7 @@
     NSUInteger binSize = waveform.count / (width * 0.1);
     if(binSize==0) {
         for (NSNumber *wf in waveform) {
-            uint8_t v = (uint8_t)(MAX(wf.floatValue * 100.0f, 255));
+            uint8_t v = (uint8_t)(MIN(wf.floatValue * 100.0f, 255));
             [filteredSamplesMA appendBytes:&v length:1];
         }
         return filteredSamplesMA;

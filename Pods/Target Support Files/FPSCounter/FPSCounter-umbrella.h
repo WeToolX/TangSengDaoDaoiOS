@@ -10,7 +10,7 @@
 #endif
 #endif
 
-#import "FPSCounter.h"
+#import <FPSCounter/FPSCounter.h>
 
 FOUNDATION_EXPORT double FPSCounterVersionNumber;
 FOUNDATION_EXPORT const unsigned char FPSCounterVersionString[];

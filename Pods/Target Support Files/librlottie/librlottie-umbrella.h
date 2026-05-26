@@ -10,10 +10,10 @@
 #endif
 #endif
 
-#import "librlottie.h"
-#import "LottieInstance.h"
-#import "rlottie_capi.h"
-#import "rlottiecommon.h"
+#import <librlottie/librlottie.h>
+#import <librlottie/LottieInstance.h>
+#import <librlottie/rlottie_capi.h>
+#import <librlottie/rlottiecommon.h>
 
 FOUNDATION_EXPORT double librlottieVersionNumber;
 FOUNDATION_EXPORT const unsigned char librlottieVersionString[];

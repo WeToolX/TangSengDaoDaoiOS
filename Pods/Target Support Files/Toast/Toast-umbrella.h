@@ -10,8 +10,8 @@
 #endif
 #endif
 
-#import "UIView+Toast.h"
-#import "Toast.h"
+#import <Toast/UIView+Toast.h>
+#import <Toast/Toast.h>
 
 FOUNDATION_EXPORT double ToastVersionNumber;
 FOUNDATION_EXPORT const unsigned char ToastVersionString[];

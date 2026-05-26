@@ -10,9 +10,9 @@
 #endif
 #endif
 
-#import "SDImageLottieCoder.h"
-#import "SDWebImageLottieLoaderDefine.h"
-#import "SDWebImageLottieCoder.h"
+#import <SDWebImageLottieCoder/SDImageLottieCoder.h>
+#import <SDWebImageLottieCoder/SDWebImageLottieLoaderDefine.h>
+#import <SDWebImageLottieCoder/SDWebImageLottieCoder.h>
 
 FOUNDATION_EXPORT double SDWebImageLottieCoderVersionNumber;
 FOUNDATION_EXPORT const unsigned char SDWebImageLottieCoderVersionString[];
