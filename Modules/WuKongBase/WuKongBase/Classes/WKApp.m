@@ -1665,12 +1665,7 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
             return nil;
         }
         return [WKMeItem initWithTitle:LLangW(@"绑定邀请码",weakSelf) icon:[weakSelf imageName:@"Me/Index/IconInviteCode"] onClick:^{
-            [weakSelf showBindInviteCodeAlert:^{
-                UIViewController *topVC = [WKNavigationManager shared].topViewController;
-                if([topVC respondsToSelector:@selector(reloadData)]) {
-                    [(id)topVC reloadData];
-                }
-            }];
+            [weakSelf showBindInviteCodeAlert:nil];
         }];
     } category:WKPOINT_CATEGORY_ME sort:5900];
     
@@ -2034,6 +2029,9 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
             }];
             [[WKSyncService shared] syncContacts:nil];
             [[WKSyncService shared] sync:nil];
+            if([topVC respondsToSelector:@selector(reloadData)]) {
+                [(id)topVC reloadData];
+            }
             if(onSuccess) {
                 onSuccess();
             }
