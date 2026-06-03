@@ -50,7 +50,7 @@
     NSMutableArray *sections = [NSMutableArray array];
     [sections addObject:@{
         @"height":@(15.0f),
-        @"title":LLang(@"开启设备锁可以保障唐僧叨叨账号安全。在未验证的设备上进行登录操作时，需要验证手机号，即使密码泄露他人也无法登录。"),
+        @"title":LLang(@"开启设备锁可以保障卿航IM账号安全。在未验证的设备上进行登录操作时，需要验证手机号，即使密码泄露他人也无法登录。"),
         @"items":@[
             @{
                 @"class":WKSwitchItemModel.class,

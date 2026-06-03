@@ -895,7 +895,7 @@
 				GCC_INPUT_FILETYPE = automatic;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
 				INFOPLIST_FILE = TangSengDaoDao/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "唐僧叨叨";
+				INFOPLIST_KEY_CFBundleDisplayName = "卿航IM";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -963,7 +963,7 @@
 				GCC_INPUT_FILETYPE = automatic;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
 				INFOPLIST_FILE = TangSengDaoDao/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "唐僧叨叨";
+				INFOPLIST_KEY_CFBundleDisplayName = "卿航IM";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (

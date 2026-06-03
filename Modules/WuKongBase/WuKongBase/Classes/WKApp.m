@@ -91,7 +91,6 @@
 #import <ZLPhotoBrowser/ZLPhotoBrowser-Swift.h>
 #import "WKSDWebImageDownloaderOperation.h"
 #import <Bugly/Bugly.h>
-#import "WKMyInviteCodeVC.h"
 #import "WKProhibitwordsService.h"
 #import "WKSecurityPrivacyVC.h"
 #import "WKFavoriteListVC.h"
@@ -129,6 +128,8 @@ static NSString * const WKDisableScreenshotKey = @"security.disable_screenshot";
 @property(nonatomic,strong) UITextField *screenshotProtectionTextField;
 @property(nonatomic,weak) UIWindow *screenshotProtectionWindow;
 @property(nonatomic,assign) BOOL screenshotProtectionInstalled;
+
+-(void) showBindInviteCodeAlert:(void(^__nullable)(void))onSuccess;
 
 
 
@@ -225,6 +226,18 @@ static WKApp *_instance;
     [SDImageCacheConfig defaultCacheConfig].maxMemoryCost = 400 * 1024 * 1024; // 400M
     
     SDWebImageDownloader.sharedDownloader.config.operationClass = WKSDWebImageDownloaderOperation.class;
+    SDWebImageDownloader.sharedDownloader.requestModifier = [SDWebImageDownloaderRequestModifier requestModifierWithBlock:^NSURLRequest * _Nullable(NSURLRequest * _Nonnull request) {
+        NSURL *apiURL = [NSURL URLWithString:WKApp.shared.config.apiBaseUrl];
+        if(!apiURL.host || !request.URL.host || ![request.URL.host isEqualToString:apiURL.host]) {
+            return request;
+        }
+        NSMutableURLRequest *mutableRequest = [request mutableCopy];
+        [mutableRequest setValue:WKApp.shared.config.bundleID forHTTPHeaderField:@"bundle_id"];
+        if(WKApp.shared.isLogined && WKApp.shared.loginInfo.token.length > 0) {
+            [mutableRequest setValue:WKApp.shared.loginInfo.token forHTTPHeaderField:@"token"];
+        }
+        return mutableRequest;
+    }];
     
 }
 
@@ -373,6 +386,12 @@ static WKApp *_instance;
         
         // 重新加载最近会话保持的位置
         [[WKConversationPositionManager shared] reload];
+        // 登录后重新拉取带 token 的 App 配置，已绑定邀请码的用户会切到子管理员独立配置。
+        [WKApp.shared.remoteConfig forceRequestAppConfig:^(NSError * _Nullable error) {
+            if(error) {
+                WKLogError(@"登录后刷新 App 配置失败！->%@",error);
+            }
+        }];
         
         // 显示首页
         if(weakSelf.getHomeViewController) {
@@ -1578,7 +1597,7 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
             }
             WKUserInfoVC *vc = [WKUserInfoVC new];
             vc.uid = result.data[@"uid"]?:@"";
-            vc.vercode = result.data[@"vercode"]?:@"";
+            vc.vercode = result.data[@"token"] ?: result.data[@"vercode"] ?: @"";
             [[WKNavigationManager shared] replacePushViewController:vc animated:YES];
             return true;
         }];
@@ -1639,15 +1658,21 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
         }];
     } category:WKPOINT_CATEGORY_ME sort:8000];
     
-    // 我的邀请码
-    [self setMethod:WKPOINT_ME_INVITE handler:^id _Nullable(id  _Nonnull param) {
-        if(!WKApp.shared.remoteConfig.registerInviteOn) {
+    // 绑定邀请码
+    [self setMethod:WKPOINT_ME_INVITE_BIND handler:^id _Nullable(id  _Nonnull param) {
+        NSString *inviteCode = WKApp.shared.loginInfo.extra[@"invite_code"] ?: @"";
+        if(inviteCode.length > 0) {
             return nil;
         }
-        return [WKMeItem initWithTitle:LLangW(@"我的邀请码",weakSelf) icon:[weakSelf imageName:@"Me/Index/IconInviteCode"] onClick:^{
-             [[WKNavigationManager shared] pushViewController:[WKMyInviteCodeVC new] animated:YES];
+        return [WKMeItem initWithTitle:LLangW(@"绑定邀请码",weakSelf) icon:[weakSelf imageName:@"Me/Index/IconInviteCode"] onClick:^{
+            [weakSelf showBindInviteCodeAlert:^{
+                UIViewController *topVC = [WKNavigationManager shared].topViewController;
+                if([topVC respondsToSelector:@selector(reloadData)]) {
+                    [(id)topVC reloadData];
+                }
+            }];
         }];
-    } category:WKPOINT_CATEGORY_ME sort:7900];
+    } category:WKPOINT_CATEGORY_ME sort:5900];
     
     // 安全与隐私
     [self setMethod:WKPOINT_ME_SECURITY handler:^id _Nullable(id  _Nonnull param) {
@@ -1973,6 +1998,51 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
         return true;
     }
     return false;
+}
+
+-(void) showBindInviteCodeAlert:(void(^__nullable)(void))onSuccess {
+    UIViewController *topVC = [WKNavigationManager shared].topViewController;
+    if(!topVC) {
+        return;
+    }
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LLang(@"绑定邀请码") message:nil preferredStyle:UIAlertControllerStyleAlert];
+    [alert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.placeholder = LLang(@"请输入邀请码");
+        textField.autocapitalizationType = UITextAutocapitalizationTypeAllCharacters;
+        textField.clearButtonMode = UITextFieldViewModeWhileEditing;
+    }];
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"绑定") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        UITextField *textField = alert.textFields.firstObject;
+        NSString *inviteCode = [[textField.text ?: @"" stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
+        if(inviteCode.length == 0) {
+            [topVC.view showHUDWithHide:LLang(@"邀请码不能为空")];
+            return;
+        }
+        [topVC.view showHUD:LLang(@"绑定中")];
+        [[WKAPIClient sharedClient] POST:@"user/invite/bind" parameters:@{@"invite_code":inviteCode}].then(^{
+            [topVC.view hideHud];
+            WKApp.shared.loginInfo.extra[@"invite_code"] = inviteCode;
+            [WKApp.shared.loginInfo save];
+            NSString *friendVersionKey = [NSString stringWithFormat:@"%@_%@",WKApp.shared.loginInfo.uid,@"friend_version"];
+            [[NSUserDefaults standardUserDefaults] removeObjectForKey:friendVersionKey];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+            [WKApp.shared.remoteConfig forceRequestAppConfig:^(NSError * _Nullable error) {
+                if(error) {
+                    WKLogError(@"绑定邀请码后刷新 App 配置失败！->%@",error);
+                }
+            }];
+            [[WKSyncService shared] syncContacts:nil];
+            [[WKSyncService shared] sync:nil];
+            if(onSuccess) {
+                onSuccess();
+            }
+            [topVC.view showHUDWithHide:LLang(@"绑定成功")];
+        }).catch(^(NSError *error){
+            [topVC.view switchHUDError:error.domain];
+        });
+    }]];
+    [topVC presentViewController:alert animated:YES completion:nil];
 }
 
 -(UIImage*) imageName:(NSString*)name {

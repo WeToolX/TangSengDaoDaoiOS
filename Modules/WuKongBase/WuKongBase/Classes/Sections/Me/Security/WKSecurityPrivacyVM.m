@@ -50,7 +50,7 @@ static NSString * const WKDisableScreenshotKey = @"security.disable_screenshot";
                 },
                 @{
                     @"class":WKSwitchItemModel.class,
-                    @"label":LLang(@"允许唐僧叨叨号搜索"),
+                    @"label":LLang(@"允许卿航IM号搜索"),
                     @"on":@([WKMySettingManager shared].searchByShort),
                     @"onSwitch":^(BOOL on) {
                         [weakSelf updateSetting:[[WKMySettingManager shared] searchByShort:on]];

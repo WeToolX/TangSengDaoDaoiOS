@@ -50,5 +50,6 @@ NS_ASSUME_NONNULL_END
 @property(nonatomic,strong,nonnull) NSNumber *lockAfterMinute; // 多久后锁屏
 @property(nonatomic,strong) NSDictionary * _Nullable setting; // 相关设置
 @property(nonatomic,copy) NSString * _Nonnull rsaPublicKey; // 服务器公钥
+@property(nonatomic,copy) NSString * _Nullable inviteCode; // 已绑定的邀请码
 
 @end

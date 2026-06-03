@@ -237,6 +237,8 @@
 
 // 我的邀请码
 #define WKPOINT_ME_INVITE @"me.invite"
+// 绑定邀请码
+#define WKPOINT_ME_INVITE_BIND @"me.invite.bind"
 
 // ---------- 通用设置 ----------
 

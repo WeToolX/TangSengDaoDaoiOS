@@ -189,6 +189,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic,assign) BOOL phoneSearchOff;
 @property(nonatomic,assign) BOOL shortnoEditOff;
 @property(nonatomic,assign) NSInteger revokeSecond; // 撤回时间
+@property(nonatomic,assign) NSInteger version; // 配置版本
 @property(nonatomic,assign) BOOL registerInviteOn; // 是否开启注册邀请
 @property(nonatomic,assign) BOOL inviteSystemAccountJoinGroupOn; // 是否允许邀请系统账号加入群里
 
@@ -200,6 +201,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic,assign) BOOL requestAppModuleSuccess; // 请求app模块是否成功
 
 -(void) requestConfig:(void(^__nullable)(NSError  * __nullable error))callback;
+
+// 强制重新拉取 App 配置。绑定邀请码后需要立刻切到子管理员独立配置。
+-(void) forceRequestAppConfig:(void(^__nullable)(NSError  * __nullable error))callback;
 
 // 启用或关闭模块
 -(void) modules:(NSString*)sid on:(BOOL)on;

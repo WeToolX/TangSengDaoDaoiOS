@@ -569,6 +569,12 @@
 "禁用"="Disable";
 "启用"="Enable";
 "复制成功"="Copy success";
+"绑定邀请码"="Bind invitation code";
+"请输入邀请码"="Enter invitation code";
+"邀请码不能为空"="Invitation code is required";
+"绑定"="Bind";
+"绑定中"="Binding";
+"绑定成功"="Bind success";
 
 // search
 "查找聊天内容"="Search Chat Content";

@@ -30,6 +30,7 @@
         loginResp.setting = dictory[@"setting"];
     }
     loginResp.rsaPublicKey = dictory[@"rsa_public_key"];
+    loginResp.inviteCode = dictory[@"invite_code"] ?: @"";
     return loginResp;
 }
 
@@ -89,9 +90,13 @@
         NSString *avatarURL = [WKAvatarUtil getAvatar:resp.uid];
         [WKApp shared].loginInfo.extra[@"avatar"] = avatarURL;
     }
+    if(resp.inviteCode && ![resp.inviteCode isEqualToString:@""]) {
+        [WKApp shared].loginInfo.extra[@"invite_code"] = resp.inviteCode;
+    }else{
+        [[WKApp shared].loginInfo.extra removeObjectForKey:@"invite_code"];
+    }
     if(isSave) {
         [[WKApp shared].loginInfo save];
     }
 }
 @end
-

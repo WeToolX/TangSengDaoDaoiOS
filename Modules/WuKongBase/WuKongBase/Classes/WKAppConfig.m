@@ -27,7 +27,7 @@
 -(instancetype) init {
     self = [super init];
     if(self) {
-        self.appName = @"唐僧叨叨";
+        self.appName = @"卿航IM";
         self.shortName = @"WuKong ID";
         self.appID = @""; // appstore的id
         self.appSchemaPrefix = @"wukong";
@@ -470,7 +470,10 @@
     __weak typeof(self) weakSelf = self;
     if(!self.requestSuccess && !self.startRequest) {
         self.startRequest = true;
-        [[WKAPIClient sharedClient] GET:@"common/appconfig" parameters:@{}].then(^(NSDictionary *resultDict){
+        [[WKAPIClient sharedClient] GET:@"common/appconfig" parameters:@{@"version":@(weakSelf.version)}].then(^(NSDictionary *resultDict){
+            if(resultDict[@"version"]) {
+                weakSelf.version = [resultDict[@"version"] integerValue];
+            }
             weakSelf.webURL =  resultDict[@"web_url"]?:@"";
             if(resultDict[@"phone_search_off"]) {
                 weakSelf.phoneSearchOff = [resultDict[@"phone_search_off"] boolValue];
@@ -523,8 +526,14 @@
             }
         });
     }
-    
-    
+
+
+}
+
+-(void) forceRequestAppConfig:(void(^)(NSError  * __nullable error))callback {
+    self.requestSuccess = false;
+    self.startRequest = false;
+    [self requestConfig:callback];
 }
 
 -(void) modules:(NSString*)sid on:(BOOL)on {

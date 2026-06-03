@@ -41,7 +41,7 @@
 }
 
 - (void)setupProvider {
-    CXProviderConfiguration *config = [[CXProviderConfiguration alloc] initWithLocalizedName:@"唐僧叨叨"];
+    CXProviderConfiguration *config = [[CXProviderConfiguration alloc] initWithLocalizedName:@"卿航IM"];
     config.supportsVideo = YES;
     config.maximumCallsPerCallGroup = 1;
     config.maximumCallGroups = 1;

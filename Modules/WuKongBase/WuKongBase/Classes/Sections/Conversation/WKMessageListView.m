@@ -1263,6 +1263,10 @@
     }
     NSIndexPath *indexPath = [self.dataProvider indexPathAtClientMsgNo:message.clientMsgNo];
     if(indexPath) {
+        if(message.isDeleted || message.remoteExtra.isMutualDeleted) {
+            [self deleteMessageUI:message];
+            return;
+        }
 //        WKMessageModel *newMessageModel = [[WKMessageModel alloc]  initWithMessage:message];
         WKMessageModel *newMessageModel = [self.dataProvider messageAtIndexPath:indexPath];
         if(!newMessageModel) {
@@ -1271,7 +1275,7 @@
         newMessageModel.message = message;
         [self.dataProvider replaceMessage:newMessageModel atClientMsgNo:message.clientMsgNo];
        
-        if(message.remoteExtra.revoke|| message.isDeleted ) {
+        if(message.remoteExtra.revoke ) {
 //            if(total == 1) { // 如果只有一条消息，这里做了单独的cell刷新，则不需要再[self.tableView reloadData]了
 //                needRelodData = false;
 //            }
@@ -1303,9 +1307,6 @@
         if(self.lastMessage) {
             if(message.isSend && message.orderSeq>self.lastMessage.orderSeq) {
                 [self updateLastMsgIfNeed:newMessageModel];
-            }
-            if(message.isDeleted && [self.lastMessage.clientMsgNo isEqualToString:message.clientMsgNo]) {
-                [self  updateLastMsgIfNeed:[self.dataProvider lastMessage]];
             }
         }
         
