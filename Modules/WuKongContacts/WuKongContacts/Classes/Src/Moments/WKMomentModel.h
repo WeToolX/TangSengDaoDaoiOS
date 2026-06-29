@@ -59,6 +59,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic,assign) NSInteger version;
 @end
 
+@interface WKMomentUserState : WKModel
+@property(nonatomic,assign) BOOL hideMyMoment;
+@property(nonatomic,assign) BOOL hideHisMoment;
+@end
+
 @interface WKMomentNotice : WKModel
 @property(nonatomic,assign) NSInteger noticeId;
 @property(nonatomic,copy) NSString *noticeType;

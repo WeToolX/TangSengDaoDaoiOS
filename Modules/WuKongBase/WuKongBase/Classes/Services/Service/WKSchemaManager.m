@@ -118,7 +118,7 @@ static WKSchemaManager *_instance = nil;
     [[WKNavigationManager shared].topViewController presentViewController:alertController animated:true completion:nil];
 }
 -(AnyPromise*) applyFriend:(NSString*)uid remark:(NSString*)remark vercode:(NSString*)vercode{
-    return [[WKAPIClient sharedClient] POST:@"friend/apply" parameters:@{@"to_uid":uid?:@"",@"remark":remark?:@"",@"vercode":vercode?:@""}];
+    return [[WKAPIClient sharedClient] POST:@"friend/apply" parameters:@{@"to_uid":uid?:@"",@"remark":remark?:@"",@"vercode":vercode?:@"",@"token":vercode?:@""}];
 }
 
 -(void) registerHandler:(NSString*)sid handler:(WKSchemaHandler)handler {

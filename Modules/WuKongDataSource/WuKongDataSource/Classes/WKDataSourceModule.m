@@ -54,7 +54,9 @@
   
     // 提醒项目提供者
     [self setReminderProvider];
-    
+    // 消息回应提供者
+    [self setReactionProvider];
+
     // 群相关接口
     [[WKGroupManager shared] setDelegate:[WKGroupManagerDelegateImp new]];
     // 消息管理
@@ -75,7 +77,7 @@
     [[WKSDK shared].mediaManager setUploadTaskProvider:^id<WKTaskProto> _Nonnull(WKMessage * _Nonnull message) {
         return [[WKFileUploadTask alloc] initWithMessage:message];
     }];
-    
+
 }
 // 给狸猫SDK提供下载任务
 -(void) setDownloadTaskProvider {
@@ -341,6 +343,38 @@
             callback(nil);
         }).catch(^(NSError *error){
             callback(error);
+        });
+    }];
+}
+
+-(void) setReactionProvider {
+    [[WKSDK shared].reactionManager setAddOrCancelReactionProvider:^(WKChannel * _Nonnull channel, uint64_t messageID, NSString * _Nonnull reactionName, WKAddOrCancelReactionsCallback  _Nonnull callback) {
+        [[WKAPIClient sharedClient] POST:@"reactions" parameters:@{
+            @"channel_id":channel.channelId?:@"",
+            @"channel_type":@(channel.channelType),
+            @"message_id":[NSString stringWithFormat:@"%llu",messageID],
+            @"emoji":reactionName?:@"",
+        }].then(^{
+            callback(nil);
+            [[WKSDK shared].reactionManager sync:channel];
+        }).catch(^(NSError *error){
+            callback(error);
+        });
+    }];
+    [[WKSDK shared].reactionManager setSyncReactionsProvider:^(WKChannel * _Nonnull channel, uint64_t maxVersion, WKSyncReactionsCallback  _Nonnull callback) {
+        [[WKAPIClient sharedClient] POST:@"reaction/sync" parameters:@{
+            @"channel_id":channel.channelId?:@"",
+            @"channel_type":@(channel.channelType),
+            @"seq":@(maxVersion),
+            @"limit":@(100),
+        }].then(^(NSArray<NSDictionary*> *results){
+            NSMutableArray<WKReaction*> *reactions = [NSMutableArray array];
+            for (NSDictionary *result in results) {
+                [reactions addObject:[WKMessageUtil toReaction:result]];
+            }
+            callback(reactions,nil);
+        }).catch(^(NSError *error){
+            callback(nil,error);
         });
     }];
 }

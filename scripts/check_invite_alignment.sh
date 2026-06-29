@@ -40,5 +40,10 @@ check "registerInviteOn && inviteCode\\.length == 0" "Modules/WuKongLogin/WuKong
 check "resp\\.inviteCode\\.length == 0" "Modules/WuKongLogin/WuKongLogin/Classes/Login/Src/WKRegisterVC.m" "successful registration persists entered invite code"
 check "result\\.data\\[@\"token\"\\]" "Modules/WuKongBase/WuKongBase/Classes/WKApp.m" "scan add friend accepts qr token field"
 check "@\"token\":vercode\\?:@\"\"" "Modules/WuKongBase/WuKongBase/Classes/Sections/Common/WKUserInfoVM.m" "friend apply sends qr token field"
+check "@\"token\":vercode\\?:@\"\"" "Modules/WuKongContacts/WuKongContacts/Classes/Src/WKContactsFriendVM.m" "contacts friend apply sends qr token field"
+check "@\"token\":vercode\\?:@\"\"" "Modules/WuKongBase/WuKongBase/Classes/Services/Service/WKSchemaManager.m" "schema friend apply sends qr token field"
+check "@\"token\":vercode\\?:@\"\"" "Modules/WuKongContacts/WuKongContacts/Classes/Src/WKContactsInfoVM.m" "contacts info apply sends qr token field"
+check "resp\\.vercode = dictory\\[@\"vercode\"\\]" "Modules/WuKongContacts/WuKongContacts/Classes/Src/WKContactsInfoVM.m" "contacts info parses user vercode"
+check "applyFriend:weakSelf\\.model\\.uid remark:remarkFD\\.text vercode:weakSelf\\.model\\.vercode" "Modules/WuKongContacts/WuKongContacts/Classes/Src/WKContactsInfoVC.m" "contacts info passes user vercode"
 
 exit "$fail"

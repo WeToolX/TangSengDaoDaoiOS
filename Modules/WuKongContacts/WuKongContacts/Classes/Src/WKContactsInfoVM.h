@@ -30,6 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
  @return <#return value description#>
  */
 -(AnyPromise*) applyFriend:(NSString*)uid remark:(NSString*)remark;
+-(AnyPromise*) applyFriend:(NSString*)uid remark:(NSString*)remark vercode:(NSString*)vercode;
 
 @end
 
@@ -40,6 +41,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic,copy) NSString *name;
 
 @property(nonatomic,copy) NSString *avatar;
+
+@property(nonatomic,copy) NSString *vercode;
 
 @end
 

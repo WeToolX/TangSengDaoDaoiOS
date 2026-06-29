@@ -27,6 +27,18 @@ static UIColor *WKMomentPanelColor(void) {
     return [UIColor colorWithRed:246.0f/255.0f green:246.0f/255.0f blue:246.0f/255.0f alpha:1.0f];
 }
 
+static UIImage *fallbackMomentIcon(NSString *name) {
+    NSString *lowerName = name.lowercaseString ?: @"";
+    NSString *symbolName = [lowerName containsString:@"comment"] ? @"text.bubble" : ([lowerName containsString:@"like"] ? @"heart.fill" : nil);
+    if(symbolName.length > 0) {
+        UIImage *image = [UIImage systemImageNamed:symbolName];
+        if(image) {
+            return [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        }
+    }
+    return nil;
+}
+
 static BOOL WKMomentMediaIsVideo(WKMomentMedia *media) {
     NSString *type = media.mediaType.lowercaseString ?: @"";
     return [type containsString:@"video"] || media.duration > 0 || media.coverURL.length > 0;
@@ -44,7 +56,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
             return image;
         }
     }
-    return nil;
+    return fallbackMomentIcon(name);
 }
 
 @interface WKMomentActionMenu : UIControl
@@ -88,6 +100,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         _likeBtn = [[UIButton alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 106.0f, 46.0f)];
         _likeBtn.titleLabel.font = [WKApp.shared.config appFontOfSize:16.0f];
         [_likeBtn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
+        _likeBtn.tintColor = UIColor.whiteColor;
         [_likeBtn addTarget:self action:@selector(likePressed) forControlEvents:UIControlEventTouchUpInside];
     }
     return _likeBtn;
@@ -99,6 +112,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         _commentBtn.titleLabel.font = [WKApp.shared.config appFontOfSize:16.0f];
         [_commentBtn setTitle:LLang(@"评论") forState:UIControlStateNormal];
         [_commentBtn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
+        _commentBtn.tintColor = UIColor.whiteColor;
         [_commentBtn setImage:[self momentImage:@"Moments/Timeline/Comment"] forState:UIControlStateNormal];
         _commentBtn.imageEdgeInsets = UIEdgeInsetsMake(0.0f, -6.0f, 0.0f, 0.0f);
         [_commentBtn addTarget:self action:@selector(commentPressed) forControlEvents:UIControlEventTouchUpInside];
@@ -470,6 +484,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
     if(!_likeIconView) {
         _likeIconView = [[UIImageView alloc] initWithFrame:CGRectMake(8.0f, 8.0f, 16.0f, 16.0f)];
         _likeIconView.contentMode = UIViewContentModeScaleAspectFit;
+        _likeIconView.tintColor = WKMomentBlueColor();
         _likeIconView.image = [self momentImage:@"Moments/Timeline/LikeActive"];
     }
     return _likeIconView;
@@ -479,6 +494,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
     if(!_commentIconView) {
         _commentIconView = [[UIImageView alloc] initWithFrame:CGRectMake(8.0f, 8.0f, 16.0f, 16.0f)];
         _commentIconView.contentMode = UIViewContentModeScaleAspectFit;
+        _commentIconView.tintColor = WKMomentBlueColor();
         _commentIconView.image = [self momentImage:@"Moments/Timeline/Comment"];
     }
     return _commentIconView;

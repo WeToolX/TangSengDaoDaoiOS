@@ -168,7 +168,7 @@
     }];
     [alertController addAction:[UIAlertAction actionWithTitle:LLang(@"确定") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         UITextField *remarkFD = alertController.textFields.firstObject;
-        [weakSelf.contactsInfoVM applyFriend:weakSelf.model.uid remark:remarkFD.text].catch(^(NSError *err){
+        [weakSelf.contactsInfoVM applyFriend:weakSelf.model.uid remark:remarkFD.text vercode:weakSelf.model.vercode].catch(^(NSError *err){
             [weakSelf showMsg:err.domain];
         });
         

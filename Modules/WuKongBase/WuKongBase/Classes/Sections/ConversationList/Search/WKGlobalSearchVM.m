@@ -84,6 +84,11 @@
     [self reloadRemoteData];
 }
 
+- (void)changeDate:(NSDate *)date {
+    self.selectedDate = date;
+    [self changeTabType:@"date"];
+}
+
 - (void)requestData:(void (^)(NSError * _Nullable))complete {
     [self search:^(NSError *error){
         complete(error);
@@ -94,7 +99,7 @@
     self.page++;
     self.pullup = true;
     
-    if(![self.tabType isEqualToString:@"all"] && ![self.tabType isEqualToString:@"file"]&&![self.tabType isEqualToString:@"media"]) {
+    if(![self.tabType isEqualToString:@"all"] && ![self.tabType isEqualToString:@"file"]&&![self.tabType isEqualToString:@"media"]&&![self.tabType isEqualToString:@"date"]) {
         complete(false);
         return;
     }
@@ -118,6 +123,8 @@
     if([self.tabType isEqualToString:@"file"]) {
         onlyMessage = true;
         [contentTypes addObject:@(WK_FILE)];
+    } else if ([self.tabType isEqualToString:@"date"]) {
+        onlyMessage = true;
     } else if ([self.tabType isEqualToString:@"media"]) { // 图片/视频
         onlyMessage = true;
         
@@ -133,7 +140,7 @@
     }
     
     NSString *keyword = self.keyword;
-    if([self.tabType isEqualToString:@"media"]) { // 图片和视频不能通过关键字搜索，所以这里抹掉关键字
+    if([self.tabType isEqualToString:@"media"] || [self.tabType isEqualToString:@"date"]) { // 图片和视频/日期不能通过关键字搜索，所以这里抹掉关键字
         keyword = @"";
     }
     
@@ -147,6 +154,13 @@
     if(self.channel) {
         param[@"channel_id"] = self.channel.channelId?:@"";
         param[@"channel_type"] = @(self.channel.channelType);
+    }
+    if([self.tabType isEqualToString:@"date"] && self.selectedDate) {
+        NSCalendar *calendar = [NSCalendar currentCalendar];
+        NSDate *startDate = [calendar startOfDayForDate:self.selectedDate];
+        NSDate *endDate = [calendar dateByAddingUnit:NSCalendarUnitDay value:1 toDate:startDate options:0];
+        param[@"start_time"] = @((NSInteger)[startDate timeIntervalSince1970]);
+        param[@"end_time"] = @((NSInteger)[endDate timeIntervalSince1970]);
     }
     
     [self requestSearch:param callback:^(NSError *err,NSDictionary * result) {
@@ -199,6 +213,9 @@
             friends = [NSArray array];
             messages = [NSArray array];
         } else if([self.tabType isEqualToString:@"file"]) {
+            friends = [NSArray array];
+            groups = [NSArray array];
+        } else if([self.tabType isEqualToString:@"date"]) {
             friends = [NSArray array];
             groups = [NSArray array];
         }

@@ -10,7 +10,6 @@
 //#import <FLEX/FLEX.h>
 #import "WKLanguageVC.h"
 #import "NSString+WKLocalized.h"
-#import "WKModuleVC.h"
 
 @interface WKCommonSettingVM ()
 
@@ -176,24 +175,6 @@
             ],
         };
     } category:WKPOINT_CATEGORY_COMMONSETTING sort:70000];
-    
-    // 模块
-    [[WKApp shared] setMethod:@"commonsetting.modules" handler:^id _Nullable(id  _Nonnull param) {
-    
-        return  @{
-            @"height":WKSectionHeight,
-            @"items":@[
-                    @{
-                        @"class":WKLabelItemModel.class,
-                        @"label":LLang(@"功能模块"),
-                        @"onClick":^{
-                            WKModuleVC *vc = [WKModuleVC new];
-                            [[WKNavigationManager shared] pushViewController:vc animated:YES];
-                        }
-                    },
-            ],
-        };
-    } category:WKPOINT_CATEGORY_COMMONSETTING sort:69000];
     
     // 版本信息
     [[WKApp shared] setMethod:@"commonsetting.version" handler:^id _Nullable(id  _Nonnull param) {

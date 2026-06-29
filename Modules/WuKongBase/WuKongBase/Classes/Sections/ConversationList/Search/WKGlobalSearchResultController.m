@@ -122,6 +122,9 @@
             [items addObject:[[WKTabbarItem alloc] initWithTitle:LLang(@"图片/视频") onClick:^{
                 [weakSelf.vm changeTabType:@"media"];
             }]];
+            [items addObject:[[WKTabbarItem alloc] initWithTitle:LLang(@"日期") onClick:^{
+                [weakSelf showDateSearchPicker];
+            }]];
         }
         
         
@@ -138,6 +141,30 @@
     
     }
     return _tabbar;
+}
+
+- (void)showDateSearchPicker {
+    [self.searchBarInput resignFirstResponder];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LLang(@"选择日期") message:@"\n\n\n\n\n\n\n\n" preferredStyle:UIAlertControllerStyleActionSheet];
+    UIDatePicker *datePicker = [[UIDatePicker alloc] initWithFrame:CGRectMake(12.0f, 30.0f, WKScreenWidth - 48.0f, 220.0f)];
+    datePicker.datePickerMode = UIDatePickerModeDate;
+    datePicker.maximumDate = [NSDate date];
+    datePicker.date = self.vm.selectedDate ?: [NSDate date];
+    if (@available(iOS 13.4, *)) {
+        datePicker.preferredDatePickerStyle = UIDatePickerStyleWheels;
+    }
+    [alert.view addSubview:datePicker];
+    __weak typeof(self) weakSelf = self;
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"确定") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [weakSelf.vm changeDate:datePicker.date];
+    }]];
+    UIPopoverPresentationController *popover = alert.popoverPresentationController;
+    if(popover) {
+        popover.sourceView = self.view;
+        popover.sourceRect = CGRectMake(self.view.lim_width/2.0f, self.tabbar.lim_bottom, 1.0f, 1.0f);
+    }
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 

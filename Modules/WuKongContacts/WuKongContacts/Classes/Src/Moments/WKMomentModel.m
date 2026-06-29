@@ -146,6 +146,15 @@ static BOOL WKMomentBool(NSDictionary *dict, NSArray<NSString*> *keys) {
 }
 @end
 
+@implementation WKMomentUserState
++(WKMomentUserState*)fromMap:(NSDictionary*)dictory type:(ModelMapType)type {
+    WKMomentUserState *state = [WKMomentUserState new];
+    state.hideMyMoment = WKMomentBool(dictory, @[@"hide_my_moment",@"hideMyMoment",@"HideMyMoment"]);
+    state.hideHisMoment = WKMomentBool(dictory, @[@"hide_his_moment",@"hideHisMoment",@"HideHisMoment"]);
+    return state;
+}
+@end
+
 @implementation WKMomentNotice
 +(WKMomentNotice*)fromMap:(NSDictionary*)dictory type:(ModelMapType)type {
     WKMomentNotice *notice = [WKMomentNotice new];

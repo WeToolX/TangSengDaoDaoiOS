@@ -19,6 +19,8 @@
 #import "WKTableSectionUtil.h"
 #import "WKGroupQRCodeVC.h"
 #import "WKGlobalSearchResultController.h"
+#import "WKPhotoBrowser.h"
+#import "WKThemeUtil.h"
 
 @interface WKConversationSettingVM ()<WKChannelManagerDelegate>
 
@@ -265,6 +267,111 @@
             ]
         };
     } category:WKPOINT_CATEGORY_CHANNELSETTING sort:89500];
+
+    [[WKApp shared] setMethod:@"channelsetting.receipt" handler:^id _Nullable(id  _Nonnull param) {
+        return @{
+            @"height":@(0.0f),
+            @"items":@[
+                @{
+                    @"class":WKSwitchItemModel.class,
+                    @"label":LLang(@"消息回执"),
+                    @"on":@(self.channelInfo?self.channelInfo.receipt:false),
+                    @"showBottomLine":@(NO),
+                    @"onSwitch":^(BOOL on){
+                        [[WKChannelSettingManager shared] channel:self.channel receipt:on];
+                    }
+                }
+            ]
+        };
+    } category:WKPOINT_CATEGORY_CHANNELSETTING sort:89480];
+
+    [[WKApp shared] setMethod:@"channelsetting.chatpwd" handler:^id _Nullable(id  _Nonnull param) {
+        return @{
+            @"height":@(0.0f),
+            @"items":@[
+                @{
+                    @"class":WKSwitchItemModel.class,
+                    @"label":LLang(@"聊天密码"),
+                    @"on":@(self.channelInfo?[self.channelInfo settingForKey:WKChannelExtraKeyChatPwd defaultValue:false]:false),
+                    @"showBottomLine":@(NO),
+                    @"onSwitch":^(BOOL on){
+                        [[WKChannelSettingManager shared] channel:self.channel chatPwdOn:on];
+                    }
+                }
+            ]
+        };
+    } category:WKPOINT_CATEGORY_CHANNELSETTING sort:89470];
+
+    [[WKApp shared] setMethod:@"channelsetting.remark" handler:^id _Nullable(id  _Nonnull param) {
+        return @{
+            @"height":@(0.0f),
+            @"items":@[
+                @{
+                    @"class":WKLabelItemModel.class,
+                    @"label":LLang(@"备注"),
+                    @"value":self.channelInfo.remark?:@"",
+                    @"showBottomLine":@(NO),
+                    @"onClick":^{
+                        [weakSelf showRemarkInput];
+                    }
+                }
+            ]
+        };
+    } category:WKPOINT_CATEGORY_CHANNELSETTING sort:89460];
+
+    [[WKApp shared] setMethod:@"channelsetting.background" handler:^id _Nullable(id  _Nonnull param) {
+        return @{
+            @"height":@(0.0f),
+            @"items":@[
+                @{
+                    @"class":WKLabelItemModel.class,
+                    @"label":LLang(@"聊天背景"),
+                    @"showBottomLine":@(NO),
+                    @"onClick":^{
+                        [weakSelf selectChatBackground];
+                    }
+                }
+            ]
+        };
+    } category:WKPOINT_CATEGORY_CHANNELSETTING sort:89450];
+
+    [[WKApp shared] setMethod:@"channelsetting.revokeRemind" handler:^id _Nullable(id  _Nonnull param) {
+        return @{
+            @"height":@(0.0f),
+            @"items":@[
+                @{
+                    @"class":WKSwitchItemModel.class,
+                    @"label":LLang(@"撤回提醒"),
+                    @"on":@([[WKChannelSettingManager shared] revokeRemind:self.channel]),
+                    @"showBottomLine":@(NO),
+                    @"onSwitch":^(BOOL on){
+                        [[WKChannelSettingManager shared] channel:self.channel revokeRemind:on];
+                    }
+                }
+            ]
+        };
+    } category:WKPOINT_CATEGORY_CHANNELSETTING sort:89440];
+
+    [[WKApp shared] setMethod:@"channelsetting.joinGroupRemind" handler:^id _Nullable(id  _Nonnull param) {
+        WKChannel *channel = param[@"channel"];
+        if(channel.channelType != WK_GROUP) {
+            return nil;
+        }
+        return @{
+            @"height":@(0.0f),
+            @"items":@[
+                @{
+                    @"class":WKSwitchItemModel.class,
+                    @"label":LLang(@"进群提醒"),
+                    @"on":@([[WKChannelSettingManager shared] joinGroupRemind:self.channel]),
+                    @"showBottomLine":@(NO),
+                    @"onSwitch":^(BOOL on){
+                        [[WKChannelSettingManager shared] channel:self.channel joinGroupRemind:on];
+                    }
+                }
+            ]
+        };
+    } category:WKPOINT_CATEGORY_CHANNELSETTING sort:89430];
     
     [[WKApp shared] setMethod:@"channelsetting.top" handler:^id _Nullable(id  _Nonnull param) {
         return @{
@@ -435,6 +542,42 @@
     } category:WKPOINT_CATEGORY_CHANNELSETTING sort:88700];
 }
 
+-(void)showRemarkInput {
+    __weak typeof(self) weakSelf = self;
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:LLang(@"设置备注") message:nil preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
+        textField.text = weakSelf.channelInfo.remark?:@"";
+        textField.placeholder = LLang(@"备注");
+    }];
+    [alertController addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:nil]];
+    [alertController addAction:[UIAlertAction actionWithTitle:LLang(@"确定") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        UITextField *field = alertController.textFields.firstObject;
+        [[WKChannelSettingManager shared] channel:weakSelf.channel remark:field.text?:@""].then(^{
+            weakSelf.channelInfo.remark = field.text?:@"";
+            [[WKSDK shared].channelManager updateChannelInfo:weakSelf.channelInfo];
+            [weakSelf reloadData];
+        });
+    }]];
+    [[WKNavigationManager shared].topViewController presentViewController:alertController animated:YES completion:nil];
+}
+
+-(void)selectChatBackground {
+    __weak typeof(self) weakSelf = self;
+    [[WKPhotoBrowser shared] showPhotoLibraryWithSender:[WKNavigationManager shared].topViewController selectCompressImageBlock:^(NSArray<NSData *> * _Nonnull images, NSArray<PHAsset *> * _Nonnull assets, BOOL isOriginal) {
+        NSData *data = images.firstObject;
+        if(!data) {
+            return;
+        }
+        BOOL saved = [WKThemeUtil saveChatBackground:weakSelf.channel data:data style:WKApp.shared.config.style];
+        if(saved) {
+            [[NSNotificationCenter defaultCenter] postNotificationName:WKNOTIFY_CHATBACKGROUND_CHANGE object:nil];
+            [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"设置成功")];
+        }else {
+            [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"设置失败")];
+        }
+    } allowSelectVideo:NO];
+}
+
 
 -(AnyPromise*) addBlacklist {
     return [[WKAPIClient sharedClient] POST:[NSString stringWithFormat:@"user/blacklist/%@",self.channelInfo.channel.channelId?:@""] parameters:nil];
@@ -501,5 +644,4 @@
     }
 }
 @end
-
 

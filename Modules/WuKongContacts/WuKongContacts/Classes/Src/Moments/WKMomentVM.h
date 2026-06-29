@@ -12,6 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(AnyPromise*)timelineWithPageIndex:(NSInteger)pageIndex pageSize:(NSInteger)pageSize;
 -(AnyPromise*)userTimeline:(NSString*)uid pageIndex:(NSInteger)pageIndex pageSize:(NSInteger)pageSize;
 -(AnyPromise*)profile:(NSString*)uid;
+-(AnyPromise*)userState:(NSString*)uid;
 -(AnyPromise*)setCover:(NSString*)cover;
 -(AnyPromise*)publishText:(NSString*)text imagePaths:(NSArray<NSString*>*)imagePaths video:(nullable WKMomentPublishMedia*)video mention:(NSDictionary*)mention visibility:(NSDictionary*)visibility;
 -(AnyPromise*)toggleLike:(NSString*)postId;

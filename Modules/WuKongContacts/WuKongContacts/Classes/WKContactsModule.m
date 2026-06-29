@@ -14,6 +14,7 @@
 #import "WKContactsLabelListVC.h"
 #import "WKMomentTimelineVC.h"
 #import "WKMomentNoticeManager.h"
+#import "WKMomentVM.h"
 @WKModule(WKContactsModule)
 
 @interface WKContactsModule ()<WKChannelManagerDelegate>
@@ -135,6 +136,57 @@
             ],
         };
     } category:WKPOINT_CATEGORY_USER_INFO_ITEM sort:3500];
+
+    [self setMethod:@"user.info.momentState" handler:^id _Nullable(id  _Nonnull param) {
+        NSString *uid = param[@"uid"];
+        if(uid.length == 0 || [uid isEqualToString:[WKApp shared].loginInfo.uid]) {
+            return nil;
+        }
+        NSMutableDictionary *context = param[@"context"];
+        if(![context isKindOfClass:NSMutableDictionary.class]) {
+            return nil;
+        }
+        NSString *stateKey = [NSString stringWithFormat:@"moment_state_%@",uid];
+        NSString *loadingKey = [NSString stringWithFormat:@"moment_state_loading_%@",uid];
+        WKMomentUserState *state = context[stateKey];
+        if(!state && ![context[loadingKey] boolValue]) {
+            context[loadingKey] = @(YES);
+            void (^reload)(void) = param[@"reload"];
+            [[WKMomentVM new] userState:uid].then(^(WKMomentUserState *result) {
+                if(result) {
+                    context[stateKey] = result;
+                }
+                [context removeObjectForKey:loadingKey];
+                if(reload) {
+                    reload();
+                }
+            }).catch(^(NSError *error) {
+                [context removeObjectForKey:loadingKey];
+            });
+        }
+        if(!state) {
+            return nil;
+        }
+        NSString *value = LLangW(@"可互相查看",weakSelf);
+        if(state.hideMyMoment && state.hideHisMoment) {
+            value = [NSString stringWithFormat:@"%@ / %@",LLangW(@"不让他看",weakSelf),LLangW(@"不看他",weakSelf)];
+        }else if(state.hideMyMoment) {
+            value = LLangW(@"不让他看",weakSelf);
+        }else if(state.hideHisMoment) {
+            value = LLangW(@"不看他",weakSelf);
+        }
+        return @{
+            @"height":@(0.0f),
+            @"items":@[
+                    @{
+                        @"class":WKMultiLabelItemModel.class,
+                        @"mode": @(WKMultiLabelItemModeLeftRight),
+                        @"label":LLangW(@"朋友圈状态",weakSelf),
+                        @"value":value,
+                    },
+            ],
+        };
+    } category:WKPOINT_CATEGORY_USER_INFO_ITEM sort:3450];
 
     [[WKMomentNoticeManager shared] sync];
 

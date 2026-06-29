@@ -88,6 +88,7 @@
 #import "WKStickerStoreVM.h"
 #import "WKStickerCollectionVC.h"
 #import "WKKeyboardService.h"
+#import "WKSearchMessageCell.h"
 #import <ZLPhotoBrowser/ZLPhotoBrowser-Swift.h>
 #import "WKSDWebImageDownloaderOperation.h"
 #import <Bugly/Bugly.h>
@@ -1262,7 +1263,39 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
         return [WKEmojiContentView new];
     } category:WKPOINT_CATEGORY_PANELCONTENT sort:4000];
    
-    
+    [self setMethod:WKPOINT_SEARCH_ITEM_FILE handler:^id _Nullable(id  _Nonnull param) {
+        NSDictionary *message = param[@"message"];
+        WKFileContent *content = param[@"content"];
+        if(![content isKindOfClass:WKFileContent.class] || !message) {
+            return nil;
+        }
+        NSDictionary *channelDict = [message[@"channel"] isKindOfClass:NSDictionary.class] ? message[@"channel"] : @{};
+        NSString *channelId = channelDict[@"channel_id"] ?: @"";
+        NSNumber *channelType = channelDict[@"channel_type"] ?: @(0);
+        NSNumber *messageSeq = message[@"message_seq"] ?: @(0);
+        NSNumber *timestamp = message[@"timestamp"] ?: @(0);
+        WKChannel *channel = [WKChannel channelID:channelId channelType:channelType.integerValue];
+        NSString *fileName = content.name.length > 0 ? content.name : LLangW(@"[文件]", weakSelf);
+        NSString *fileInfo = content.displaySize.length > 0 ? [NSString stringWithFormat:@"%@  %@", fileName, content.displaySize] : fileName;
+        return @{
+            @"class":WKSearchMessageModel.class,
+            @"channel":channel,
+            @"keyword":@"",
+            @"content":fileInfo,
+            @"timestamp":timestamp,
+            @"showBottomLine":@(NO),
+            @"showTopLine":@(NO),
+            @"bottomLeftSpace":@(0.0),
+            @"onClick":^{
+                WKConversationVC *vc = [[WKConversationVC alloc] init];
+                vc.channel = channel;
+                vc.locationAtOrderSeq = [WKSDK.shared.chatManager getOrderSeq:messageSeq.unsignedLongLongValue];
+                [[WKNavigationManager shared] pushViewController:vc animated:YES];
+            },
+        };
+    }];
+
+
 //    // 面板正文 - gif热图
 //    [self setMethod:WKPOINT_PANELCONTENT_HOT handler:^id _Nullable(id  _Nonnull param) {
 //        WKStickerGIFContentView *gifContentView = [[WKStickerGIFContentView alloc] initWithKeyword:LLangW(@"热图", weakSelf)];
@@ -1351,6 +1384,10 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
         }];
         return nil;
     } category:WKPOINT_CATEGORY_MESSAGE_LONGMENUS sort:5000];
+
+    [self setMethod:@"longmenus.customSticker" handler:^id _Nullable(id  _Nonnull param) {
+        return [[WKApp shared] invoke:WKPOINT_LONGMENUS_ADDEMOJI param:param];
+    }];
     
     // 回复
     [self setMethod:WKPOINT_LONGMENUS_REPLY handler:^id _Nullable(id  _Nonnull param) {
@@ -1366,6 +1403,51 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
             [context replyTo:message.message];
         }];
     } category:WKPOINT_CATEGORY_MESSAGE_LONGMENUS sort:4000];
+
+    // 表情回复
+    [self setMethod:@"longmenus.emojiReaction" handler:^id _Nullable(id  _Nonnull param) {
+        WKMessageModel *message = param[@"message"];
+        if(message.status != WK_MESSAGE_SUCCESS || message.messageId == 0 || message.messageSeq == 0) {
+            return nil;
+        }
+        if(message.message.isDeleted || message.revoke || message.content.flame || [[WKSDK shared] isSystemMessage:message.contentType] || message.contentType == WK_CMD || message.contentType == WK_HISTORY_SPLIT) {
+            return nil;
+        }
+        UIImage *icon = [GenerateImageUtils generateTintedImgWithImage:[weakSelf imageName:@"Common/Index/EmojiFaceNormal"] color:weakSelf.config.contextMenu.primaryColor backgroundColor:nil];
+        return [WKMessageLongMenusItem initWithTitle:LLangW(@"表情回复", weakSelf) icon:icon onTap:^(id<WKConversationContext> context){
+            NSArray<NSString*> *emojis = @[@"👍", @"❤️", @"😂", @"😮", @"😢", @"🙏"];
+            WKActionSheetView2 *sheet = [WKActionSheetView2 initWithTip:LLangW(@"表情回复", weakSelf)];
+            for (NSString *emoji in emojis) {
+                [sheet addItem:[WKActionSheetButtonItem2 initWithTitle:emoji onClick:^{
+                    [[WKSDK shared].reactionManager addOrCancelReaction:emoji messageID:message.messageId complete:^(NSError * _Nullable error) {
+                        if(error) {
+                            [[WKNavigationManager shared].topViewController.view showHUDWithHide:error.domain?:LLangW(@"操作失败", weakSelf)];
+                        }
+                    }];
+                }]];
+            }
+            [sheet show];
+        }];
+    } category:WKPOINT_CATEGORY_MESSAGE_LONGMENUS sort:3900];
+
+    [self setMethod:@"longmenus.receipt" handler:^id _Nullable(id  _Nonnull param) {
+        WKMessageModel *message = param[@"message"];
+        if(!message || ![message isSend] || message.status != WK_MESSAGE_SUCCESS || message.messageId == 0 || message.messageSeq == 0) {
+            return nil;
+        }
+        if(message.message.isDeleted || message.revoke || message.content.flame || [[WKSDK shared] isSystemMessage:message.contentType] || message.contentType == WK_CMD || message.contentType == WK_HISTORY_SPLIT) {
+            return nil;
+        }
+        UIImage *icon = [GenerateImageUtils generateTintedImgWithImage:[weakSelf imageName:@"Common/Index/MsgReaded"] color:weakSelf.config.contextMenu.primaryColor backgroundColor:nil];
+        return [WKMessageLongMenusItem initWithTitle:LLangW(@"消息回执", weakSelf) icon:icon onTap:^(id<WKConversationContext> context){
+            NSInteger readedCount = message.remoteExtra.readedCount;
+            NSInteger unreadCount = message.remoteExtra.unreadCount;
+            NSString *tip = [NSString stringWithFormat:@"%@ %ld %@，%@ %ld %@",LLangW(@"已读", weakSelf),(long)readedCount,LLangW(@"人", weakSelf),LLangW(@"未读", weakSelf),(long)unreadCount,LLangW(@"人", weakSelf)];
+            WKActionSheetView2 *sheet = [WKActionSheetView2 initWithTip:tip];
+            [sheet addItem:[WKActionSheetButtonItem2 initWithTitle:LLangW(@"确定", weakSelf) onClick:^{}]];
+            [sheet show];
+        }];
+    } category:WKPOINT_CATEGORY_MESSAGE_LONGMENUS sort:3850];
     
     
     // 复制

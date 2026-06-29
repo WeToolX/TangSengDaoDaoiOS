@@ -15,11 +15,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic,assign) WKHistoryMessageSearchType searchType;
 @property(nonatomic,copy) NSString *keyword;
 @property(nonatomic,strong) WKChannel *channel; // 查询指定频道内的消息
+@property(nonatomic,strong,nullable) NSDate *selectedDate; // 按日期搜索
 
 -(void) changeKeyword:(NSString*)keyword;
 
-// 改变tabType，值：all,contacts,group,file
+// 改变tabType，值：all,contacts,group,file,media,date
 -(void) changeTabType:(NSString*)type;
+
+// 按日期搜索
+-(void) changeDate:(NSDate*)date;
 
 // 是否在频道内搜索
 -(BOOL) searchInChannel;

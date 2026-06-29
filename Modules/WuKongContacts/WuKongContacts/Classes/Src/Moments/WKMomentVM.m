@@ -26,6 +26,12 @@
     });
 }
 
+-(AnyPromise*)userState:(NSString*)uid {
+    return [[WKAPIClient sharedClient] GET:[NSString stringWithFormat:@"moment/setting/%@",uid ?: @""] parameters:nil].then(^id(NSDictionary *result) {
+        return [WKMomentUserState fromMap:result type:ModelMapTypeAPI];
+    });
+}
+
 -(AnyPromise*)setCover:(NSString*)cover {
     return [[WKAPIClient sharedClient] PUT:@"moment/profile/cover" parameters:@{@"cover":cover ?: @""}];
 }
