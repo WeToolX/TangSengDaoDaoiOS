@@ -123,7 +123,7 @@
     
     __weak typeof(self) weakSelf = self;
     [[WKAPIClient sharedClient] POST:@"user/chatpwd" parameters:@{
-        @"login_pwd":self.loginPwd?:@"",
+        @"login_pwd":[WKMD5Util md5HexDigest:self.loginPwd?:@""],
         @"chat_pwd": [self digestPwd:self.chatPwd]?:@"",
     }].then(^{
         [WKApp shared].loginInfo.extra[@"chat_pwd"] = [weakSelf digestPwd:weakSelf.chatPwd];
