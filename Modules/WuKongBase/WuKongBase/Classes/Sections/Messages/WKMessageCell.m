@@ -870,7 +870,7 @@ static CGFloat const WKReactionBubbleBottomInset = 24.0f;
 
 
 -(void) layoutReaction {
-    CGFloat reactionOffset = 4.0f;
+    CGFloat reactionOffset = -2.0f;
     if([self.messageModel isSend]) {
         self.reactionView.lim_left = self.bubbleBackgroundView.lim_right - self.reactionView.lim_width - 8.0f;
     }else{
