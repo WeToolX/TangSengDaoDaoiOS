@@ -20,6 +20,9 @@
 #import "WKThemeUtil.h"
 #import "WKRTCSessionManager.h"
 #import "WKRTCAPI.h"
+#import "WKConversationPasswordVM.h"
+#import "WKConversationPasswordVC.h"
+#import "WKPwdKeyboardInputView.h"
 @interface WKConversationVC ()<WKChannelManagerDelegate>
 
 @property(nonatomic,strong) WKConversationView *conversationView;
@@ -40,6 +43,8 @@
 @property(nonatomic,strong) UILabel *rtcTopSubtitleLabel;
 @property(nonatomic,strong) WKRTCCallPayload *currentRTCTopPayload;
 @property(nonatomic,assign) BOOL rtcStateRequesting;
+@property(nonatomic,assign) BOOL chatPasswordVerified;
+@property(nonatomic,assign) BOOL chatPasswordPrompting;
 
 @end
 
@@ -162,6 +167,9 @@
 
 -(void) channelInfoLoadFinished {
     [self refreshTitle];
+    if(![self verifyChatPasswordIfNeeded]) {
+        return;
+    }
     [self.conversationView setGroupForbiddenIfNeed];
     if(self.channel.channelType == WK_PERSON && self.channelInfo.robot) {
         [self.conversationView syncRobot:@[self.channel.channelId]];
@@ -178,6 +186,112 @@
     }
     
     
+}
+
+-(BOOL)verifyChatPasswordIfNeeded {
+    if(!self.channelInfo) {
+        return YES;
+    }
+    BOOL chatPwdOn = [self.channelInfo settingForKey:WKChannelExtraKeyChatPwd defaultValue:false];
+    if(!chatPwdOn) {
+        self.chatPasswordVerified = YES;
+        self.conversationView.hidden = NO;
+        return YES;
+    }
+    if(self.chatPasswordVerified || [[[WKApp shared].loginInfo.extra objectForKey:[self chatPwdVerifiedKey]] boolValue]) {
+        self.chatPasswordVerified = YES;
+        self.conversationView.hidden = NO;
+        return YES;
+    }
+    self.conversationView.hidden = YES;
+    if(self.chatPasswordPrompting) {
+        return NO;
+    }
+    NSString *chatPwd = [WKApp shared].loginInfo.extra[@"chat_pwd"];
+    if(chatPwd.length == 0) {
+        [self showChatPasswordSetupAlert];
+        return NO;
+    }
+    [self showChatPasswordVerifyInput:chatPwd];
+    return NO;
+}
+
+-(void)showChatPasswordSetupAlert {
+    self.chatPasswordPrompting = YES;
+    __weak typeof(self) weakSelf = self;
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:LLang(@"聊天密码") message:LLang(@"请先设置6位数字聊天密码") preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+        weakSelf.chatPasswordPrompting = NO;
+        [[WKNavigationManager shared] popViewControllerAnimated:YES];
+    }]];
+    [alertController addAction:[UIAlertAction actionWithTitle:LLang(@"去设置") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        WKConversationPasswordVC *vc = [WKConversationPasswordVC new];
+        vc.onFinish = ^{
+            weakSelf.chatPasswordPrompting = NO;
+            [weakSelf markChatPasswordVerified];
+            [weakSelf channelInfoLoadFinished];
+        };
+        [[WKNavigationManager shared] pushViewController:vc animated:YES];
+    }]];
+    [[WKNavigationManager shared].topViewController presentViewController:alertController animated:YES completion:nil];
+}
+
+-(void)showChatPasswordVerifyInput:(NSString*)chatPwd {
+    self.chatPasswordPrompting = YES;
+    __weak typeof(self) weakSelf = self;
+    __block NSInteger errorCount = [self getChatPwdErrorCount:self.channel];
+    WKPwdKeyboardInputView *vw = [WKPwdKeyboardInputView new];
+    vw.remark = LLang(@"聊天密码");
+    [vw setFinishBlock:^(NSString * _Nonnull pwd) {
+        if([[WKConversationPasswordVM digestPwd:pwd] isEqualToString:chatPwd]) {
+            weakSelf.chatPasswordPrompting = NO;
+            [weakSelf setChatPwdErrorCount:0 channel:weakSelf.channel];
+            [weakSelf markChatPasswordVerified];
+            [weakSelf channelInfoLoadFinished];
+        }else {
+            errorCount++;
+            [weakSelf setChatPwdErrorCount:errorCount channel:weakSelf.channel];
+            if(errorCount >= 3) {
+                [WKAlertUtil alert:LLang(@"连续错误次数太多，已删除该聊天记录！") title:LLang(@"错误密码")];
+                [[WKMessageManager shared] clearMessages:weakSelf.channel];
+                [weakSelf setChatPwdErrorCount:0 channel:weakSelf.channel];
+            }else {
+                [WKAlertUtil alert:[NSString stringWithFormat:LLang(@"还连续%ld次输入错误，将会清空该聊天记录！\n如果您忘记聊天密码，您可以重置聊天密码"),3 - (long)errorCount] title:LLang(@"错误密码")];
+            }
+        }
+    }];
+    [vw setCancelBlock:^{
+        weakSelf.chatPasswordPrompting = NO;
+        [[WKNavigationManager shared] popViewControllerAnimated:YES];
+    }];
+    [vw setOtherButtonClickBlock:^(UIButton *btn) {
+        weakSelf.chatPasswordPrompting = NO;
+        WKConversationPasswordVC *vc = [WKConversationPasswordVC new];
+        [[WKNavigationManager shared] pushViewController:vc animated:YES];
+    }];
+    [vw show];
+}
+
+-(void)markChatPasswordVerified {
+    self.chatPasswordVerified = YES;
+    self.conversationView.hidden = NO;
+    [WKApp shared].loginInfo.extra[[self chatPwdVerifiedKey]] = @(YES);
+}
+
+-(void)setChatPwdErrorCount:(NSInteger)count channel:(WKChannel*)channel {
+    [[NSUserDefaults standardUserDefaults] setInteger:count forKey:[self chatPwdErrorKey:channel]];
+}
+
+-(NSInteger)getChatPwdErrorCount:(WKChannel*)channel {
+    return [[NSUserDefaults standardUserDefaults] integerForKey:[self chatPwdErrorKey:channel]];
+}
+
+-(NSString*)chatPwdErrorKey:(WKChannel*)channel {
+    return [NSString stringWithFormat:@"chatpwderror_%@_%@_%hhu",[WKApp shared].loginInfo.uid,channel.channelId,channel.channelType];
+}
+
+-(NSString*)chatPwdVerifiedKey {
+    return [NSString stringWithFormat:@"chatpwdverified_%@_%@_%hhu",[WKApp shared].loginInfo.uid,self.channel.channelId,self.channel.channelType];
 }
 // 超级群初始化
 -(void) superGroupInit {

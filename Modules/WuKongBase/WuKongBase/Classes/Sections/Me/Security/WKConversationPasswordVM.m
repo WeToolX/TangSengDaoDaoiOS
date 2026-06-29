@@ -142,7 +142,11 @@
 }
 
 -(NSString*) digestPwd:(NSString*)pwd {
-    return [WKMD5Util md5HexDigest:[NSString stringWithFormat:@"%@%@",pwd,[WKApp shared].loginInfo.uid]];
+    return [WKConversationPasswordVM digestPwd:pwd];
+}
+
++(NSString*)digestPwd:(NSString*)pwd {
+    return [WKMD5Util md5HexDigest:[NSString stringWithFormat:@"%@%@",pwd?:@"",[WKApp shared].loginInfo.uid?:@""]];
 }
 
 @end

@@ -39,6 +39,17 @@ static UIImage *fallbackMomentIcon(NSString *name) {
     return nil;
 }
 
+static UIImage *WKMomentFixedIcon(UIImage *image, CGSize size) {
+    if(!image) {
+        return nil;
+    }
+    UIGraphicsBeginImageContextWithOptions(size, NO, 0.0f);
+    [image drawInRect:CGRectMake(0.0f, 0.0f, size.width, size.height)];
+    UIImage *fixed = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return [fixed imageWithRenderingMode:image.renderingMode];
+}
+
 static BOOL WKMomentMediaIsVideo(WKMomentMedia *media) {
     NSString *type = media.mediaType.lowercaseString ?: @"";
     return [type containsString:@"video"] || media.duration > 0 || media.coverURL.length > 0;
@@ -247,6 +258,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
 @property(nonatomic,strong) UILabel *noticeBubbleLbl;
 @property(nonatomic,copy) void(^onCoverTap)(void);
 @property(nonatomic,copy) void(^onNoticeTap)(void);
+@property(nonatomic,copy) void(^onAvatarTap)(void);
 -(void)refreshWithUID:(NSString*)uid name:(NSString*)name cover:(NSString*)cover;
 -(void)refreshNoticeCount:(NSInteger)count;
 @end
@@ -281,6 +293,8 @@ static UIImage *WKMomentImageNamed(NSString *name) {
     if(!_avatarView) {
         _avatarView = [[WKUserAvatar alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 72.0f, 72.0f)];
         _avatarView.layer.borderWidth = 0.0f;
+        _avatarView.userInteractionEnabled = YES;
+        [_avatarView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(avatarTap)]];
     }
     return _avatarView;
 }
@@ -361,6 +375,12 @@ static UIImage *WKMomentImageNamed(NSString *name) {
     }
 }
 
+-(void)avatarTap {
+    if(self.onAvatarTap) {
+        self.onAvatarTap();
+    }
+}
+
 -(void)refreshNoticeCount:(NSInteger)count {
     self.noticeBubble.hidden = count <= 0;
     self.noticeBubbleLbl.text = [NSString stringWithFormat:@"%ld%@",(long)count,LLang(@"条新消息")];
@@ -384,6 +404,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
 @property(nonatomic,strong) WKMomentPost *post;
 @property(nonatomic,copy) void(^onAction)(WKMomentPost *post, CGRect rect);
 @property(nonatomic,copy) void(^onMediaTap)(WKMomentMedia *media, UIImageView *imageView);
+@property(nonatomic,copy) void(^onAvatarTap)(WKMomentPost *post);
 -(void)refresh:(WKMomentPost*)post;
 +(CGFloat)heightForPost:(WKMomentPost*)post;
 @end
@@ -418,6 +439,8 @@ static UIImage *WKMomentImageNamed(NSString *name) {
 -(WKUserAvatar *)avatarView {
     if(!_avatarView) {
         _avatarView = [[WKUserAvatar alloc] initWithFrame:CGRectMake(0.0f, 0.0f, WKMomentAvatarSize, WKMomentAvatarSize)];
+        _avatarView.userInteractionEnabled = YES;
+        [_avatarView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(avatarPressed)]];
     }
     return _avatarView;
 }
@@ -427,6 +450,8 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         _nameLbl = [UILabel new];
         _nameLbl.textColor = [UIColor colorWithRed:71.0f/255.0f green:88.0f/255.0f blue:135.0f/255.0f alpha:1.0f];
         _nameLbl.font = [WKApp.shared.config appFontOfSizeMedium:16.0f];
+        _nameLbl.userInteractionEnabled = YES;
+        [_nameLbl addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(avatarPressed)]];
     }
     return _nameLbl;
 }
@@ -485,7 +510,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         _likeIconView = [[UIImageView alloc] initWithFrame:CGRectMake(8.0f, 8.0f, 16.0f, 16.0f)];
         _likeIconView.contentMode = UIViewContentModeScaleAspectFit;
         _likeIconView.tintColor = WKMomentBlueColor();
-        _likeIconView.image = [self momentImage:@"Moments/Timeline/LikeActive"];
+        _likeIconView.image = WKMomentFixedIcon([self momentImage:@"Moments/Timeline/LikeActive"], CGSizeMake(16.0f, 16.0f));
     }
     return _likeIconView;
 }
@@ -495,7 +520,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         _commentIconView = [[UIImageView alloc] initWithFrame:CGRectMake(8.0f, 8.0f, 16.0f, 16.0f)];
         _commentIconView.contentMode = UIViewContentModeScaleAspectFit;
         _commentIconView.tintColor = WKMomentBlueColor();
-        _commentIconView.image = [self momentImage:@"Moments/Timeline/Comment"];
+        _commentIconView.image = WKMomentFixedIcon([self momentImage:@"Moments/Timeline/Comment"], CGSizeMake(16.0f, 16.0f));
     }
     return _commentIconView;
 }
@@ -538,6 +563,12 @@ static UIImage *WKMomentImageNamed(NSString *name) {
     self.commentsLbl.text = [self commentsText:post.comments];
     [self reloadMedia];
     [self setNeedsLayout];
+}
+
+-(void)avatarPressed {
+    if(self.onAvatarTap) {
+        self.onAvatarTap(self.post);
+    }
 }
 
 -(NSString*)likesText:(NSArray<WKMomentActor*>*)likes {
@@ -828,6 +859,9 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         };
         _headerView.onNoticeTap = ^{
             [weakSelf noticePressed];
+        };
+        _headerView.onAvatarTap = ^{
+            [weakSelf openUserTimeline:[weakSelf targetUID]];
         };
     }
     return _headerView;
@@ -1122,7 +1156,20 @@ static UIImage *WKMomentImageNamed(NSString *name) {
     cell.onMediaTap = ^(WKMomentMedia *media, UIImageView *imageView) {
         [weakSelf openMedia:media fromView:imageView];
     };
+    cell.onAvatarTap = ^(WKMomentPost *post) {
+        [weakSelf openUserTimeline:post.user.uid];
+    };
     return cell;
+}
+
+-(void)openUserTimeline:(NSString*)uid {
+    if(uid.length == 0) {
+        return;
+    }
+    if([uid isEqualToString:self.targetUID] && ![self isMine]) {
+        return;
+    }
+    [[WKNavigationManager shared] pushViewController:[[WKMomentTimelineVC alloc] initWithUID:uid] animated:YES];
 }
 
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {

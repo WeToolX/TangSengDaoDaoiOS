@@ -20,6 +20,7 @@
 #import "WKTypingContent.h"
 #import "WKConversationAddItem.h"
 #import "WKConversationPasswordVC.h"
+#import "WKConversationPasswordVM.h"
 #import "WKConversationListTableView.h"
 #import "WKConversationListHeaderView.h"
 #import "WKOnlineStatusManager.h"
@@ -641,6 +642,7 @@
                     vw.remark = LLang(@"聊天密码");
                     [vw setFinishBlock:^(NSString * _Nonnull pwd) {
                         if([[self digestPwd:pwd] isEqualToString:chatPwd]) {
+                            [weakSelf markChatPasswordVerified:channel];
                             [weakSelf toConversation:conversationModel];
                             [weakSelf setChatPwdErrorCount:0 channel:channel];
                         }else {
@@ -675,7 +677,15 @@
 }
 
 -(NSString*) digestPwd:(NSString*)pwd {
-    return [WKMD5Util md5HexDigest:[NSString stringWithFormat:@"%@%@",pwd,[WKApp shared].loginInfo.uid]];
+    return [WKConversationPasswordVM digestPwd:pwd];
+}
+
+-(void)markChatPasswordVerified:(WKChannel*)channel {
+    [WKApp shared].loginInfo.extra[[self chatPwdVerifiedKey:channel]] = @(YES);
+}
+
+-(NSString*)chatPwdVerifiedKey:(WKChannel*)channel {
+    return [NSString stringWithFormat:@"chatpwdverified_%@_%@_%hhu",[WKApp shared].loginInfo.uid,channel.channelId,channel.channelType];
 }
 
 #pragma  mark -- SwipeTableViewCellDelegate

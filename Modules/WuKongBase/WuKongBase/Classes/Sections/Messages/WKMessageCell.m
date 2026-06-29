@@ -860,12 +860,12 @@ static NSMutableDictionary *flameNodeCacheDict;
 -(void) layoutReaction {
     CGFloat reactionOffset = 4.0f;
     if([self.messageModel isSend]) {
-        self.reactionView.lim_left = self.bubbleBackgroundView.lim_left - self.reactionView.lim_width + reactionOffset;
+        self.reactionView.lim_left = self.bubbleBackgroundView.lim_right - self.reactionView.lim_width - 8.0f;
     }else{
-        self.reactionView.lim_left = self.bubbleBackgroundView.lim_right - reactionOffset;
+        self.reactionView.lim_left = self.bubbleBackgroundView.lim_left + 8.0f;
     }
     
-    self.reactionView.lim_top = self.bubbleBackgroundView.lim_bottom  -  self.reactionView.lim_height - 10.0f;
+    self.reactionView.lim_top = self.bubbleBackgroundView.lim_bottom  -  self.reactionView.lim_height + reactionOffset;
 }
 
 -(UIImage*) bubbleImage {

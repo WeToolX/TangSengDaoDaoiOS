@@ -63,6 +63,21 @@
    return [data writeToFile:bgFilePath atomically:YES];
 }
 
++(BOOL) clearChatBackground:(WKChannel*)channel {
+    NSString *themeDir = [WKApp.shared.config.fileStorageDir stringByAppendingPathComponent:@"theme"];
+    NSString *channelBackgroundDir = [themeDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@-%hhu",channel.channelId,channel.channelType]];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if(![fileManager fileExistsAtPath:channelBackgroundDir]) {
+        return true;
+    }
+    NSError *error;
+    BOOL removed = [fileManager removeItemAtPath:channelBackgroundDir error:&error];
+    if(error) {
+        NSLog(@"清理频道主题目录失败！=>%@",error);
+    }
+    return removed && !error;
+}
+
 // 保存默认背景图
 +(BOOL) saveDefaultBackground:(NSData*)data style:(WKSystemStyle)style{
     if(!data) {

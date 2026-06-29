@@ -21,6 +21,7 @@
 #import "WKGlobalSearchResultController.h"
 #import "WKPhotoBrowser.h"
 #import "WKThemeUtil.h"
+#import "WKConversationPasswordVC.h"
 
 @interface WKConversationSettingVM ()<WKChannelManagerDelegate>
 
@@ -295,7 +296,7 @@
                     @"on":@(self.channelInfo?[self.channelInfo settingForKey:WKChannelExtraKeyChatPwd defaultValue:false]:false),
                     @"showBottomLine":@(NO),
                     @"onSwitch":^(BOOL on){
-                        [[WKChannelSettingManager shared] channel:self.channel chatPwdOn:on];
+                        [weakSelf ensureChatPasswordBeforeToggle:on];
                     }
                 }
             ]
@@ -563,6 +564,126 @@
 
 -(void)selectChatBackground {
     __weak typeof(self) weakSelf = self;
+    UIView *topView = [WKNavigationManager shared].topViewController.view;
+    [topView showHUD];
+    [[WKAPIClient sharedClient] GET:@"common/chatbg" parameters:nil].then(^(id result){
+        [topView hideHud];
+        NSArray<NSDictionary*> *backgrounds = [weakSelf chatBackgroundsFromResponse:result];
+        WKActionSheetView2 *sheet = [WKActionSheetView2 initWithTip:nil];
+        [sheet addItem:[WKActionSheetButtonItem2 initWithTitle:LLang(@"默认背景") onClick:^{
+            BOOL cleared = [WKThemeUtil clearChatBackground:weakSelf.channel];
+            if(cleared) {
+                [[NSNotificationCenter defaultCenter] postNotificationName:WKNOTIFY_CHATBACKGROUND_CHANGE object:nil];
+                [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"设置成功")];
+            }else {
+                [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"设置失败")];
+            }
+        }]];
+        NSInteger index = 0;
+        for (NSDictionary *background in backgrounds) {
+            index++;
+            NSString *title = [weakSelf chatBackgroundTitle:background index:index];
+            [sheet addItem:[WKActionSheetButtonItem2 initWithTitle:title onClick:^{
+                [weakSelf downloadAndSaveChatBackground:background];
+            }]];
+        }
+        [sheet show];
+    }).catch(^(NSError *error){
+        [topView hideHud];
+        [[WKNavigationManager shared].topViewController.view showHUDWithHide:error.domain?:LLang(@"获取失败")];
+    });
+}
+
+-(NSArray<NSDictionary*>*)chatBackgroundsFromResponse:(id)response {
+    id list = response;
+    if([response isKindOfClass:NSDictionary.class]) {
+        NSDictionary *dict = response;
+        list = dict[@"list"]?:dict[@"data"]?:dict[@"items"]?:dict[@"backgrounds"]?:dict[@"chat_bg"];
+    }
+    if(![list isKindOfClass:NSArray.class]) {
+        return @[];
+    }
+    NSMutableArray *backgrounds = [NSMutableArray array];
+    for (id item in (NSArray*)list) {
+        if([item isKindOfClass:NSDictionary.class]) {
+            [backgrounds addObject:item];
+        }
+    }
+    return backgrounds;
+}
+
+-(NSString*)chatBackgroundTitle:(NSDictionary*)background index:(NSInteger)index {
+    NSString *title = background[@"name"]?:background[@"title"]?:background[@"remark"];
+    if(title.length == 0) {
+        title = [NSString stringWithFormat:@"%@ %ld",LLang(@"背景"),(long)index];
+    }
+    return title;
+}
+
+-(NSURL*)chatBackgroundURL:(NSDictionary*)background {
+    NSString *path = background[@"url"]?:background[@"path"]?:background[@"cover"]?:background[@"image"]?:background[@"bg"]?:background[@"background"];
+    if(path.length == 0) {
+        return nil;
+    }
+    if([path hasPrefix:@"http"]) {
+        return [NSURL URLWithString:path];
+    }
+    return [[WKApp shared] getFileFullUrl:path];
+}
+
+-(void)downloadAndSaveChatBackground:(NSDictionary*)background {
+    NSURL *url = [self chatBackgroundURL:background];
+    if(!url) {
+        [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"背景地址为空")];
+        return;
+    }
+    UIView *topView = [WKNavigationManager shared].topViewController.view;
+    [topView showHUD];
+    WKChannel *channel = self.channel;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSData *data = [NSData dataWithContentsOfURL:url];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [topView hideHud];
+            BOOL saved = [WKThemeUtil saveChatBackground:channel data:data style:WKApp.shared.config.style];
+            if(saved) {
+                [[NSNotificationCenter defaultCenter] postNotificationName:WKNOTIFY_CHATBACKGROUND_CHANGE object:nil];
+                [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"设置成功")];
+            }else {
+                [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"设置失败")];
+            }
+        });
+    });
+}
+
+-(void)ensureChatPasswordBeforeToggle:(BOOL)on {
+    if(!on) {
+        [[WKChannelSettingManager shared] channel:self.channel chatPwdOn:NO];
+        return;
+    }
+    NSString *chatPwd = [WKApp shared].loginInfo.extra[@"chat_pwd"];
+    if(chatPwd.length > 0) {
+        [[WKChannelSettingManager shared] channel:self.channel chatPwdOn:YES];
+        return;
+    }
+    __weak typeof(self) weakSelf = self;
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:LLang(@"聊天密码") message:LLang(@"请先设置6位数字聊天密码") preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+        [weakSelf reloadData];
+    }]];
+    [alertController addAction:[UIAlertAction actionWithTitle:LLang(@"去设置") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        WKConversationPasswordVC *vc = [WKConversationPasswordVC new];
+        vc.onFinish = ^{
+            [[WKChannelSettingManager shared] channel:weakSelf.channel chatPwdOn:YES];
+            [weakSelf reloadData];
+        };
+        [[WKNavigationManager shared] pushViewController:vc animated:YES];
+    }]];
+    [[WKNavigationManager shared].topViewController presentViewController:alertController animated:YES completion:nil];
+}
+
+
+-(void)selectChatBackgroundFromPhotoLibrary {
+    __weak typeof(self) weakSelf = self;
     [[WKPhotoBrowser shared] showPhotoLibraryWithSender:[WKNavigationManager shared].topViewController selectCompressImageBlock:^(NSArray<NSData *> * _Nonnull images, NSArray<PHAsset *> * _Nonnull assets, BOOL isOriginal) {
         NSData *data = images.firstObject;
         if(!data) {
@@ -644,4 +765,3 @@
     }
 }
 @end
-

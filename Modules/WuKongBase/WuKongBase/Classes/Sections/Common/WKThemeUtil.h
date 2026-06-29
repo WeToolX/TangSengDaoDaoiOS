@@ -23,6 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 +(BOOL) saveChatBackground:(WKChannel*)channel data:(NSData*)data style:(WKSystemStyle)style;
 
+// 清理某个频道的聊天背景
++(BOOL) clearChatBackground:(WKChannel*)channel;
+
 // 保存默认背景图
 +(BOOL) saveDefaultBackground:(NSData*)data style:(WKSystemStyle)style;
 

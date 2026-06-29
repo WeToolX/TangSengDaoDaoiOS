@@ -19,3 +19,8 @@ require_pattern "user\\.info\\.momentState" "Modules/WuKongContacts/WuKongContac
 require_pattern "fallbackMomentIcon" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentTimelineVC.m" "iOS moments uses fallback icons for like/comment"
 require_pattern "longmenus\\.receipt" "Modules/WuKongBase/WuKongBase/Classes/WKApp.m" "iOS long press has message receipt entry"
 require_pattern "longmenus\\.customSticker" "Modules/WuKongBase/WuKongBase/Classes/WKApp.m" "iOS long press has custom sticker entry"
+require_pattern "tgReactionChip" "Modules/WuKongBase/WuKongBase/Classes/Sections/Messages/WKReactionBaseView.m" "iOS reactions render as embedded TG-style chips"
+require_pattern "ensureChatPasswordBeforeToggle" "Modules/WuKongBase/WuKongBase/Classes/Sections/ConversationSetting/WKConversationSettingVM.m" "iOS chat password toggle requires password setup first"
+require_pattern "verifyChatPasswordIfNeeded" "Modules/WuKongBase/WuKongBase/Classes/Sections/Conversation/WKConversationVC.m" "iOS verifies chat password when entering protected chats"
+require_pattern "common/chatbg" "Modules/WuKongBase/WuKongBase/Classes/Sections/ConversationSetting/WKConversationSettingVM.m" "iOS chat background comes from backend list"
+require_pattern "openUserTimeline:" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentTimelineVC.m" "iOS moments avatar opens user timeline"
