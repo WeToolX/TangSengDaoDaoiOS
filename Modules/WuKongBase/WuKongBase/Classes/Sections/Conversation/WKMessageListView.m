@@ -1480,14 +1480,33 @@
         NSIndexPath *indexPath = [self.dataProvider indexPathAtMessageID:reaction.messageId];
         if(indexPath) {
             WKMessageModel *messageModel = [self.dataProvider messageAtIndexPath:indexPath];
+            BOOL hadReaction = messageModel.reactions.count > 0;
             if(reaction.isDeleted == 1) {
                 [messageModel cancelReaction:reaction];
             }else {
                 [messageModel addReaction:reaction];
             }
-            WKMessageCell *messageCell = [self.tableView cellForRowAtIndexPath:indexPath];
-            [messageCell refresh:messageModel];
-            [messageCell layoutReaction];
+            BOOL rowHeightChanged = hadReaction != (messageModel.reactions.count > 0);
+            [self refreshReactionCellAtIndexPath:indexPath messageModel:messageModel rowHeightChanged:rowHeightChanged];
+        }
+    }
+}
+
+- (void)refreshReactionCellAtIndexPath:(NSIndexPath*)indexPath messageModel:(WKMessageModel*)messageModel rowHeightChanged:(BOOL)rowHeightChanged {
+    WKMessageCell *messageCell = [self.tableView cellForRowAtIndexPath:indexPath];
+    if([messageCell isKindOfClass:WKMessageCell.class]) {
+        [messageCell refresh:messageModel];
+        [messageCell setNeedsLayout];
+        [messageCell layoutIfNeeded];
+        [messageCell layoutReaction];
+    }
+    if(rowHeightChanged) {
+        [UIView performWithoutAnimation:^{
+            [self.tableView beginUpdates];
+            [self.tableView endUpdates];
+        }];
+        if(self.positionAtBottom) {
+            [self scrollToBottom:NO];
         }
     }
 }

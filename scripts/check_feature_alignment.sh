@@ -20,6 +20,8 @@ require_pattern "fallbackMomentIcon" "Modules/WuKongContacts/WuKongContacts/Clas
 require_pattern "longmenus\\.receipt" "Modules/WuKongBase/WuKongBase/Classes/WKApp.m" "iOS long press has message receipt entry"
 require_pattern "longmenus\\.customSticker" "Modules/WuKongBase/WuKongBase/Classes/WKApp.m" "iOS long press has custom sticker entry"
 require_pattern "tgReactionChip" "Modules/WuKongBase/WuKongBase/Classes/Sections/Messages/WKReactionBaseView.m" "iOS reactions render as embedded TG-style chips"
+require_pattern "refreshReactionCellAtIndexPath" "Modules/WuKongBase/WuKongBase/Classes/Sections/Conversation/WKMessageListView.m" "iOS reaction updates refresh visible message cell immediately"
+require_pattern "rowHeightChanged" "Modules/WuKongBase/WuKongBase/Classes/Sections/Conversation/WKMessageListView.m" "iOS reaction updates recalculate message row height"
 require_pattern "ensureChatPasswordBeforeToggle" "Modules/WuKongBase/WuKongBase/Classes/Sections/ConversationSetting/WKConversationSettingVM.m" "iOS chat password toggle requires password setup first"
 require_pattern "verifyChatPasswordIfNeeded" "Modules/WuKongBase/WuKongBase/Classes/Sections/Conversation/WKConversationVC.m" "iOS verifies chat password when entering protected chats"
 require_pattern "\"login_pwd\":\\[WKMD5Util md5HexDigest:self\\.loginPwd" "Modules/WuKongBase/WuKongBase/Classes/Sections/Me/Security/WKConversationPasswordVM.m" "iOS hashes login password before setting chat password"
