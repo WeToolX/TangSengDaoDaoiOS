@@ -1,6 +1,16 @@
 source 'https://cdn.cocoapods.org/'
 require 'shellwords'
 
+def apply_xcode_recommended_project_format(project)
+    project.instance_variable_set(:@object_version, '77')
+    project.root_object.compatibility_version = 'Xcode 16.0'
+    project.root_object.preferred_project_object_version = '77'
+    project.root_object.minimized_project_reference_proxies = '1'
+    project.root_object.attributes['BuildIndependentTargetsInParallel'] = '1'
+    project.root_object.attributes['LastSwiftUpdateCheck'] = '2610'
+    project.root_object.attributes['LastUpgradeCheck'] = '2610'
+end
+
 # Uncomment the next line to define a global platform for your project
  platform :ios, '15.0'
 workspace 'TangSengDaoDaoiOS.xcworkspace'
@@ -21,7 +31,8 @@ post_install do |installer|
     end
     
     # Fix bundle targets' 'Signing Certificate' to 'Sign to Run Locally'
-    installer.pods_project.root_object.attributes['LastUpgradeCheck'] = '2610'
+    apply_xcode_recommended_project_format(project)
+    apply_xcode_recommended_project_format(installer.pods_project)
     installer.pods_project.build_configurations.each do |config|
         config.build_settings['ENABLE_MODULE_VERIFIER'] = 'NO'
         config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -377,9 +377,10 @@
 		71D695FB23926E3500D092BA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = YES;
+				BuildIndependentTargetsInParallel = 1;
 				CLASSPREFIX = WK;
 				DefaultBuildSystemTypeForWorkspace = Original;
+				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				ORGANIZATIONNAME = WK;
 				TargetAttributes = {
@@ -396,7 +397,7 @@
 				};
 			};
 			buildConfigurationList = 71D695FE23926E3500D092BA /* Build configuration list for PBXProject "TangSengDaoDaoiOS" */;
-			compatibilityVersion = "Xcode 9.3";
+			compatibilityVersion = "Xcode 16.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -405,9 +406,11 @@
 				"zh-Hans",
 			);
 			mainGroup = 71D695FA23926E3500D092BA;
+			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				D302DDECB6B93CB44DA1E9C7 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 71D6960423926E3500D092BA /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
