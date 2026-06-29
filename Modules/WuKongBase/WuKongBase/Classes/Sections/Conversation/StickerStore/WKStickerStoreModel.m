@@ -98,6 +98,7 @@ static BOOL WKStickerBool(NSDictionary *dict, NSArray<NSString*> *keys) {
     WKSticker *sticker = [WKSticker new];
     sticker.path = [self displayURL];
     sticker.category = self.packageId ?: @"";
+    sticker.customId = self.itemId ?: @"";
     sticker.width = @(self.width);
     sticker.height = @(self.height);
     sticker.format = self.originExt.length > 0 ? self.originExt : self.sourceMediaType;

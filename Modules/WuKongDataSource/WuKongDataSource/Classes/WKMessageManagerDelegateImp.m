@@ -115,32 +115,20 @@
 
 
 -(void) messageManager:(WKMessageManager*) manager collectExpressions:(WKMessageModel*)message {
-    NSMutableDictionary *paraDict;
+    NSString *uploadPath;
     if (message.contentType == WK_GIF) {
         WKGIFContent *content = (WKGIFContent *)message.content;
-        paraDict = @{@"path":content.url, @"width":@(content.width), @"height":@(content.height)}.mutableCopy;
+        uploadPath = content.url;
     }
     else {
         WKLottieStickerContent *content = (WKLottieStickerContent *)message.content;
-        paraDict = @{@"path":content.url}.mutableCopy;
-    
-        // TODO: 理论上收藏Lottie表情不需要传高宽，因为lottie是矢量图,这里
-        [paraDict setObject:@(256) forKey:@"width"];
-        [paraDict setObject:@(256) forKey:@"height"];
-        
-        if (content.format && content.format.length > 0) {
-            [paraDict setObject:content.format forKey:@"format"];
-        }
-        if (content.placeholder && content.placeholder.length > 0) {
-            [paraDict setObject:content.placeholder forKey:@"placeholder"];
-        }
-        if (content.category && content.category.length > 0) {
-            [paraDict setObject:content.category forKey:@"category"];
-        }
+        uploadPath = content.placeholder.length > 0 ? content.placeholder : content.url;
     }
-    [[WKAPIClient sharedClient] POST:@"sticker/user" parameters:paraDict].then(^{
+    if(uploadPath.length == 0) {
+        return;
+    }
+    [[WKAPIClient sharedClient] POST:@"sticker/custom" parameters:@{@"upload_path":uploadPath, @"name":@""}].then(^{
         [[WKNavigationManager shared].topViewController.view showHUDWithHide:@"添加成功!"];
-        [WKApp.shared loadCollectStickers];
     }).catch(^(NSError *error){
         WKLogError(@"单个表情收藏失败:%@", error);
     });

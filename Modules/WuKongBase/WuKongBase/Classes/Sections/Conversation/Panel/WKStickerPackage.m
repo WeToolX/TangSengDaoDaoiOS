@@ -21,6 +21,7 @@
     resp.sortNum = dictory[@"sort_num"];
     resp.category = dictory[@"category"];
     resp.placeholder = dictory[@"placeholder"];
+    resp.customId = dictory[@"custom_id"];
     return resp;
 }
 
@@ -33,6 +34,7 @@
     paramDict[@"sort_num"] = self.sortNum?:@(0);
     paramDict[@"category"] = self.category?:@"";
     paramDict[@"placeholder"] = self.placeholder?:@"";
+    paramDict[@"custom_id"] = self.customId?:@"";
     return paramDict;
 }
 

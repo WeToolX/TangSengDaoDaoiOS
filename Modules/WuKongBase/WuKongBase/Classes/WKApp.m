@@ -68,6 +68,7 @@
 #import "WKScreenProtectionView.h"
 #import "WKMySettingManager.h"
 #import "WKConversationPosition.h"
+#import "WKStickerStoreModel.h"
 #import "WKWebClientInfoVC.h"
 #import "WKLottieStickerCell.h"
 #import "WKLottieStickerContent.h"
@@ -2062,8 +2063,28 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
 
 -(AnyPromise*) loadCollectStickers {
     __weak typeof(self) weakSelf = self;
-   return [[WKAPIClient sharedClient] GET:@"sticker/user" parameters:nil model:WKSticker.class].then(^(NSArray *stickerArray) {
-        weakSelf.collectStickers = stickerArray;
+   return [[WKAPIClient sharedClient] GET:@"sticker/favorites" parameters:nil].then(^(id result) {
+       NSMutableArray *stickerArray = [NSMutableArray array];
+       NSArray *list = [result isKindOfClass:NSArray.class] ? result : @[];
+       for(NSDictionary *row in list) {
+           if(![row isKindOfClass:NSDictionary.class]) {
+               continue;
+           }
+           NSDictionary *detail = row[@"detail"];
+           if(![detail isKindOfClass:NSDictionary.class]) {
+               continue;
+           }
+           WKStickerStoreItem *item = [WKStickerStoreItem fromMap:detail type:ModelMapTypeAPI];
+           WKSticker *sticker = [item toSticker];
+           NSString *targetID = [row[@"target_id"] isKindOfClass:NSString.class] ? row[@"target_id"] : @"";
+           if(targetID.length > 0 && sticker.customId.length == 0) {
+               sticker.customId = targetID;
+           }
+           if(sticker.path.length > 0) {
+               [stickerArray addObject:sticker];
+           }
+       }
+       weakSelf.collectStickers = stickerArray;
        return stickerArray;
     }).catch(^(NSError *error){
         NSLog(@"加载收藏的表情失败！");

@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic,strong) NSNumber *sortNum;
 @property(nonatomic,copy) NSString *category;
 @property(nonatomic,copy) NSString *placeholder;
+@property(nonatomic,copy) NSString *customId;
 
 // ---------- 自定义属性 ----------
 @property(nonatomic,assign) BOOL isEdit; //编辑模式

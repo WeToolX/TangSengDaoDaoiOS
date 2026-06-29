@@ -29,5 +29,8 @@ require_pattern "chatBackgroundPreviewPath" "Modules/WuKongBase/WuKongBase/Class
 require_pattern "reactionBubbleBottomInset" "Modules/WuKongBase/WuKongBase/Classes/Sections/Messages/WKMessageCell.m" "iOS reaction chip expands message bubble bottom padding"
 require_pattern "WKStickerCollectionVC" "Modules/WuKongBase/WuKongBase/Classes/Sections/Conversation/StickerStore/WKStickerMyPackagesVC.m" "iOS sticker store exposes custom sticker manager"
 require_pattern "openUserTimeline:" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentTimelineVC.m" "iOS moments avatar opens user timeline"
+require_pattern "openUserTimelineWithActor" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentTimelineVC.m" "iOS moments passes nickname when opening user timeline"
+require_pattern "WKMomentMenuIconImage|WKMomentIconView" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentTimelineVC.m" "iOS moments action icons keep fixed aspect size"
 require_pattern "moment/feed/%@" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentVM.m" "iOS user moments use backend moment feed by uid"
 require_pattern "self\\.uid\\.length == 0 \\? \\[self\\.vm timelineWithPageIndex" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentTimelineVC.m" "iOS only root moments page uses mixed friend feed"
+require_pattern "sticker/custom" "Modules/WuKongBase/WuKongBase/Classes/Sections/Conversation/WKStickerCollectionVC.m" "iOS custom sticker upload uses backend custom endpoint"

@@ -42,8 +42,8 @@ static BOOL WKMomentBool(NSDictionary *dict, NSArray<NSString*> *keys) {
 +(WKMomentActor*)fromMap:(NSDictionary*)dictory type:(ModelMapType)type {
     WKMomentActor *actor = [WKMomentActor new];
     actor.uid = WKMomentString(dictory, @[@"uid",@"UID",@"user_id",@"UserID"]);
-    actor.name = WKMomentString(dictory, @[@"name",@"Name",@"display_name",@"DisplayName"]);
-    actor.avatar = WKMomentString(dictory, @[@"avatar",@"Avatar"]);
+    actor.name = WKMomentString(dictory, @[@"name",@"Name",@"display_name",@"DisplayName",@"nickname",@"Nickname",@"nick_name",@"NickName",@"username",@"Username"]);
+    actor.avatar = WKMomentString(dictory, @[@"avatar",@"Avatar",@"avatar_url",@"AvatarURL",@"avatarUrl"]);
     actor.cover = WKMomentString(dictory, @[@"cover",@"Cover"]);
     return actor;
 }

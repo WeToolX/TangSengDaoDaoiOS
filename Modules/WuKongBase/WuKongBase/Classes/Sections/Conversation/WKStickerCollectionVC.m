@@ -12,6 +12,7 @@
 #import "WKLottieStickerContent.h"
 #import <MobileCoreServices/MobileCoreServices.h>
 #import "WKStickerCollectAddCell.h"
+#import "WKStickerStoreModel.h"
 #import <ZLPhotoBrowser/ZLPhotoBrowser-Swift.h>
 
 @interface WKStickerCollectionVC () <UICollectionViewDataSource,UICollectionViewDelegate>
@@ -357,11 +358,9 @@
 //添加单个自定义表情
 - (void)addNewEmojiInStickerCollectionVC:(NSData *)imageData urlString:(NSString *)string {
     __weak typeof(self) weakSelf = self;
-    UIImage *img = [[UIImage alloc] initWithData:imageData];
-    NSDictionary *paraDict = @{@"path":string,
-                               @"width":@(img.size.width),
-                               @"height":@(img.size.height)};
-    [[WKAPIClient sharedClient] POST:@"sticker/user" parameters:paraDict].then(^{
+    NSString *uploadPath = string ?: @"";
+    NSDictionary *paraDict = @{@"upload_path":uploadPath, @"name":@""};
+    [[WKAPIClient sharedClient] POST:@"sticker/custom" parameters:paraDict].then(^{
         [weakSelf getAllEmojisInStickerCollectionVC];
         [weakSelf.view hideHud];
     }).catch(^(NSError *error){
@@ -374,15 +373,45 @@
 - (void)getAllEmojisInStickerCollectionVC {
     __weak typeof(self) weakSelf = self;
     
-    [WKApp.shared loadCollectStickers].then(^(NSArray *stickerArray){
+    [[WKAPIClient sharedClient] GET:@"sticker/custom" parameters:nil].then(^(id result){
         [weakSelf.dataArray removeAllObjects];
         
         NSMutableArray *array = @[[weakSelf setDefaultSticker]].mutableCopy;
-        [array addObjectsFromArray:stickerArray];
+        for(NSDictionary *dict in [weakSelf customStickerListFromResult:result]) {
+            WKSticker *sticker = [weakSelf stickerFromCustomMap:dict];
+            if(sticker.path.length > 0) {
+                [array addObject:sticker];
+            }
+        }
         
         [weakSelf.dataArray addObjectsFromArray:array];
         [weakSelf.collectionView reloadData];
+    }).catch(^(NSError *error){
+        WKLogError(@"加载单个自定义表情失败:%@", error);
     });
+}
+
+- (NSArray<NSDictionary*>*)customStickerListFromResult:(id)result {
+    if([result isKindOfClass:NSArray.class]) {
+        return result;
+    }
+    if([result isKindOfClass:NSDictionary.class]) {
+        id list = result[@"list"] ?: result[@"data"] ?: result[@"items"];
+        if([list isKindOfClass:NSArray.class]) {
+            return list;
+        }
+    }
+    return @[];
+}
+
+- (WKSticker*)stickerFromCustomMap:(NSDictionary*)dict {
+    WKStickerStoreItem *item = [WKStickerStoreItem fromMap:dict type:ModelMapTypeAPI];
+    WKSticker *sticker = [item toSticker];
+    if(sticker.path.length == 0) {
+        sticker.path = dict[@"path"] ?: dict[@"url"] ?: @"";
+    }
+    sticker.customId = item.itemId.length > 0 ? item.itemId : (dict[@"custom_id"] ?: @"");
+    return sticker;
 }
 
 - (WKStickerCollectAddCellModel *)setDefaultSticker {
@@ -398,14 +427,16 @@
     NSMutableArray *deleteModelArray = @[].mutableCopy;
     for (WKSticker *resp in _dataArray) {
         if (resp.isSelected) {
-            [deleteArray addObject:resp.path];
+            if(resp.customId.length > 0) {
+                [deleteArray addObject:resp.customId];
+            }
             [deleteModelArray addObject:resp];
         }
     }
     if (deleteArray.count > 0) {
         [_dataArray removeObjectsInArray:deleteModelArray];
         [self.collectionView reloadData];
-        [[WKAPIClient sharedClient] DELETE:@"sticker/user" parameters:@{@"paths":deleteArray}];
+        [[WKAPIClient sharedClient] DELETE:@"sticker/custom" parameters:@{@"custom_ids":deleteArray}];
         [self refreshFootViewStatus];
     }
     return;
@@ -414,10 +445,8 @@
 // 移到最前
 -(void) stickerMoveFont {
     NSMutableArray *moveArray = @[].mutableCopy;
-    NSMutableArray *movePathArray = @[].mutableCopy;
     for (WKSticker *resp in _dataArray) {
         if (resp.isSelected) {
-            [movePathArray addObject:resp.path];
             [moveArray addObject:resp];
             resp.isSelected = NO;
         }
@@ -432,7 +461,16 @@
         
         [self refreshFootViewStatus];
         
-        [[WKAPIClient sharedClient] PUT:@"sticker/user/front" parameters:@{@"paths":movePathArray}];
+        NSMutableArray *customIDs = @[].mutableCopy;
+        for(id model in self.dataArray) {
+            if([model isKindOfClass:WKSticker.class]) {
+                WKSticker *sticker = (WKSticker*)model;
+                if(sticker.customId.length > 0) {
+                    [customIDs addObject:sticker.customId];
+                }
+            }
+        }
+        [[WKAPIClient sharedClient] PUT:@"sticker/custom/reorder" parameters:@{@"ids":customIDs}];
     }
 }
 

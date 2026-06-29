@@ -43,11 +43,18 @@ static UIImage *WKMomentFixedIcon(UIImage *image, CGSize size) {
     if(!image) {
         return nil;
     }
+    CGSize imageSize = image.size;
+    CGRect drawRect = CGRectMake(0.0f, 0.0f, size.width, size.height);
+    if(imageSize.width > 0.0f && imageSize.height > 0.0f) {
+        CGFloat scale = MIN(size.width/imageSize.width, size.height/imageSize.height);
+        CGSize fitSize = CGSizeMake(imageSize.width * scale, imageSize.height * scale);
+        drawRect = CGRectMake((size.width - fitSize.width)/2.0f, (size.height - fitSize.height)/2.0f, fitSize.width, fitSize.height);
+    }
     UIGraphicsBeginImageContextWithOptions(size, NO, 0.0f);
-    [image drawInRect:CGRectMake(0.0f, 0.0f, size.width, size.height)];
+    [image drawInRect:drawRect];
     UIImage *fixed = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-    return [fixed imageWithRenderingMode:image.renderingMode];
+    return [fixed imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
 }
 
 static BOOL WKMomentMediaIsVideo(WKMomentMedia *media) {
@@ -68,6 +75,10 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         }
     }
     return fallbackMomentIcon(name);
+}
+
+static UIImage *WKMomentMenuIconImage(NSString *name) {
+    return WKMomentFixedIcon(WKMomentImageNamed(name), CGSizeMake(18.0f, 18.0f));
 }
 
 @interface WKMomentActionMenu : UIControl
@@ -112,6 +123,8 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         _likeBtn.titleLabel.font = [WKApp.shared.config appFontOfSize:16.0f];
         [_likeBtn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
         _likeBtn.tintColor = UIColor.whiteColor;
+        _likeBtn.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        _likeBtn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
         [_likeBtn addTarget:self action:@selector(likePressed) forControlEvents:UIControlEventTouchUpInside];
     }
     return _likeBtn;
@@ -124,7 +137,9 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         [_commentBtn setTitle:LLang(@"评论") forState:UIControlStateNormal];
         [_commentBtn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
         _commentBtn.tintColor = UIColor.whiteColor;
-        [_commentBtn setImage:[self momentImage:@"Moments/Timeline/Comment"] forState:UIControlStateNormal];
+        _commentBtn.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        _commentBtn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+        [_commentBtn setImage:WKMomentMenuIconImage(@"Moments/Timeline/Comment") forState:UIControlStateNormal];
         _commentBtn.imageEdgeInsets = UIEdgeInsetsMake(0.0f, -6.0f, 0.0f, 0.0f);
         [_commentBtn addTarget:self action:@selector(commentPressed) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -135,7 +150,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
     self.frame = view.bounds;
     [view addSubview:self];
     [self.likeBtn setTitle:(liked ? LLang(@"取消") : LLang(@"点赞")) forState:UIControlStateNormal];
-    [self.likeBtn setImage:[self momentImage:(liked ? @"Moments/Timeline/LikeMenuActive" : @"Moments/Timeline/LikeOutline")] forState:UIControlStateNormal];
+    [self.likeBtn setImage:WKMomentMenuIconImage(liked ? @"Moments/Timeline/LikeMenuActive" : @"Moments/Timeline/LikeOutline") forState:UIControlStateNormal];
     self.likeBtn.imageEdgeInsets = UIEdgeInsetsMake(0.0f, -6.0f, 0.0f, 0.0f);
     CGFloat x = MAX(12.0f, MIN(rect.origin.x - 212.0f + 4.0f, view.lim_width - 224.0f));
     CGFloat y = CGRectGetMidY(rect) - 23.0f;
@@ -259,7 +274,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
 @property(nonatomic,copy) void(^onCoverTap)(void);
 @property(nonatomic,copy) void(^onNoticeTap)(void);
 @property(nonatomic,copy) void(^onAvatarTap)(void);
--(void)refreshWithUID:(NSString*)uid name:(NSString*)name cover:(NSString*)cover;
+-(void)refreshWithUID:(NSString*)uid name:(NSString*)name avatar:(NSString*)avatar cover:(NSString*)cover;
 -(void)refreshNoticeCount:(NSInteger)count;
 @end
 
@@ -353,9 +368,9 @@ static UIImage *WKMomentImageNamed(NSString *name) {
     self.noticeBubble.lim_top = self.coverView.lim_bottom + 8.0f;
 }
 
--(void)refreshWithUID:(NSString*)uid name:(NSString*)name cover:(NSString*)cover {
+-(void)refreshWithUID:(NSString*)uid name:(NSString*)name avatar:(NSString*)avatar cover:(NSString*)cover {
     self.nameLbl.text = name.length > 0 ? name : uid;
-    self.avatarView.url = [WKAvatarUtil getAvatar:uid];
+    self.avatarView.url = avatar.length > 0 ? [WKAvatarUtil getFullAvatarWIthPath:avatar] : [WKAvatarUtil getAvatar:uid];
     if(cover.length > 0) {
         [self.coverView lim_setImageWithURL:[WKApp.shared getFileFullUrl:cover]];
     }else {
@@ -771,6 +786,8 @@ static UIImage *WKMomentImageNamed(NSString *name) {
 @property(nonatomic,strong) WKMomentVM *vm;
 @property(nonatomic,strong) NSMutableArray<WKMomentPost*> *posts;
 @property(nonatomic,copy) NSString *uid;
+@property(nonatomic,copy) NSString *targetDisplayName;
+@property(nonatomic,copy) NSString *targetAvatar;
 @property(nonatomic,assign) NSInteger pageIndex;
 @property(nonatomic,assign) BOOL loading;
 @property(nonatomic,assign) BOOL hasMore;
@@ -791,6 +808,15 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         _posts = [NSMutableArray array];
         _pageIndex = 1;
         _hasMore = YES;
+    }
+    return self;
+}
+
+-(instancetype)initWithActor:(WKMomentActor *)actor {
+    self = [self initWithUID:actor.uid];
+    if(self) {
+        _targetDisplayName = actor.name;
+        _targetAvatar = actor.avatar;
     }
     return self;
 }
@@ -829,7 +855,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         NSString *name = WKApp.shared.loginInfo.extra[@"name"];
         return name.length > 0 ? name : WKApp.shared.loginInfo.uid;
     }
-    return self.targetUID;
+    return self.targetDisplayName.length > 0 ? self.targetDisplayName : self.targetUID;
 }
 
 -(UITableView *)tableView {
@@ -903,9 +929,9 @@ static UIImage *WKMomentImageNamed(NSString *name) {
     __weak typeof(self) weakSelf = self;
     [self.vm profile:self.targetUID].then(^(WKMomentProfile *profile) {
         weakSelf.cover = profile.cover;
-        [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName cover:weakSelf.cover];
+        [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName avatar:weakSelf.targetAvatar cover:weakSelf.cover];
     }).catch(^(NSError *error) {
-        [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName cover:nil];
+        [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName avatar:weakSelf.targetAvatar cover:nil];
     });
 }
 
@@ -1080,7 +1106,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
             [weakSelf.vm setCover:path].then(^{
                 [weakSelf.view hideHud];
                 weakSelf.cover = path;
-                [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName cover:path];
+                [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName avatar:weakSelf.targetAvatar cover:path];
             }).catch(^(NSError *error) {
                 [weakSelf.view hideHud];
                 [weakSelf.view showHUDWithHide:error.domain];
@@ -1157,9 +1183,19 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         [weakSelf openMedia:media fromView:imageView];
     };
     cell.onAvatarTap = ^(WKMomentPost *post) {
-        [weakSelf openUserTimeline:post.user.uid];
+        [weakSelf openUserTimelineWithActor:post.user];
     };
     return cell;
+}
+
+-(void)openUserTimelineWithActor:(WKMomentActor*)actor {
+    if(actor.uid.length == 0) {
+        return;
+    }
+    if([actor.uid isEqualToString:self.targetUID] && ![self isMine]) {
+        return;
+    }
+    [[WKNavigationManager shared] pushViewController:[[WKMomentTimelineVC alloc] initWithActor:actor] animated:YES];
 }
 
 -(void)openUserTimeline:(NSString*)uid {
