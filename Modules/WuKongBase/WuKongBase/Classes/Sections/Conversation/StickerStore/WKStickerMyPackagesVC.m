@@ -8,6 +8,94 @@
 #import "WuKongBase.h"
 #import "UIView+WK.h"
 #import "UIView+WKCommon.h"
+#import "WKStickerCollectionVC.h"
+
+@interface WKStickerMyCustomCell : UITableViewCell
+
+@property(nonatomic,strong) UIView *iconBoxView;
+@property(nonatomic,strong) UILabel *iconLbl;
+@property(nonatomic,strong) UILabel *titleLbl;
+@property(nonatomic,strong) UILabel *subtitleLbl;
+
+@end
+
+@implementation WKStickerMyCustomCell
+
++(NSString*)cellId {
+    return @"WKStickerMyCustomCell";
+}
+
+-(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+    self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
+    if(self) {
+        self.selectionStyle = UITableViewCellSelectionStyleDefault;
+        self.backgroundColor = WKApp.shared.config.cellBackgroundColor;
+        self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        [self.contentView addSubview:self.iconBoxView];
+        [self.iconBoxView addSubview:self.iconLbl];
+        [self.contentView addSubview:self.titleLbl];
+        [self.contentView addSubview:self.subtitleLbl];
+    }
+    return self;
+}
+
+-(UIView *)iconBoxView {
+    if(!_iconBoxView) {
+        _iconBoxView = [[UIView alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 54.0f, 54.0f)];
+        _iconBoxView.layer.cornerRadius = 12.0f;
+        _iconBoxView.layer.masksToBounds = YES;
+        _iconBoxView.backgroundColor = [UIColor colorWithRed:245.0f/255.0f green:245.0f/255.0f blue:245.0f/255.0f alpha:1.0f];
+    }
+    return _iconBoxView;
+}
+
+-(UILabel *)iconLbl {
+    if(!_iconLbl) {
+        _iconLbl = [UILabel new];
+        _iconLbl.text = @"+";
+        _iconLbl.textAlignment = NSTextAlignmentCenter;
+        _iconLbl.textColor = WKApp.shared.config.themeColor;
+        _iconLbl.font = [WKApp.shared.config appFontOfSize:32.0f];
+    }
+    return _iconLbl;
+}
+
+-(UILabel *)titleLbl {
+    if(!_titleLbl) {
+        _titleLbl = [UILabel new];
+        _titleLbl.textColor = WKApp.shared.config.defaultTextColor;
+        _titleLbl.font = [WKApp.shared.config appFontOfSize:18.0f];
+        _titleLbl.text = LLang(@"添加的单个表情");
+    }
+    return _titleLbl;
+}
+
+-(UILabel *)subtitleLbl {
+    if(!_subtitleLbl) {
+        _subtitleLbl = [UILabel new];
+        _subtitleLbl.textColor = WKApp.shared.config.tipColor;
+        _subtitleLbl.font = [WKApp.shared.config appFontOfSize:14.0f];
+        _subtitleLbl.text = LLang(@"添加单个表情");
+    }
+    return _subtitleLbl;
+}
+
+-(void)layoutSubviews {
+    [super layoutSubviews];
+    self.iconBoxView.lim_left = 24.0f;
+    self.iconBoxView.lim_top = (self.contentView.lim_height - self.iconBoxView.lim_height)/2.0f;
+    self.iconLbl.frame = self.iconBoxView.bounds;
+    self.titleLbl.lim_left = self.iconBoxView.lim_right + 18.0f;
+    self.titleLbl.lim_top = 28.0f;
+    self.titleLbl.lim_width = self.contentView.lim_width - self.titleLbl.lim_left - 44.0f;
+    self.titleLbl.lim_height = 24.0f;
+    self.subtitleLbl.lim_left = self.titleLbl.lim_left;
+    self.subtitleLbl.lim_top = self.titleLbl.lim_bottom + 4.0f;
+    self.subtitleLbl.lim_width = self.titleLbl.lim_width;
+    self.subtitleLbl.lim_height = 20.0f;
+}
+
+@end
 
 @interface WKStickerMyPackageCell : UITableViewCell
 
@@ -133,6 +221,7 @@
         _tableView.dataSource = self;
         _tableView.delegate = self;
         _tableView.tableFooterView = [UIView new];
+        [_tableView registerClass:WKStickerMyCustomCell.class forCellReuseIdentifier:[WKStickerMyCustomCell cellId]];
         [_tableView registerClass:WKStickerMyPackageCell.class forCellReuseIdentifier:[WKStickerMyPackageCell cellId]];
     }
     return _tableView;
@@ -161,10 +250,20 @@
 }
 
 -(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if(section == 0) {
+        return 1;
+    }
     return self.items.count;
 }
 
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 2;
+}
+
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if(indexPath.section == 0) {
+        return [tableView dequeueReusableCellWithIdentifier:[WKStickerMyCustomCell cellId] forIndexPath:indexPath];
+    }
     WKStickerMyPackageCell *cell = [tableView dequeueReusableCellWithIdentifier:[WKStickerMyPackageCell cellId] forIndexPath:indexPath];
     [cell refresh:self.items[indexPath.row]];
     __weak typeof(self) weakSelf = self;
@@ -176,6 +275,23 @@
 
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     return 108.0f;
+}
+
+-(CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return section == 0 ? 0.01f : 10.0f;
+}
+
+-(UIView*)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    UIView *view = [UIView new];
+    view.backgroundColor = WKApp.shared.config.backgroundColor;
+    return view;
+}
+
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    if(indexPath.section == 0) {
+        [[WKNavigationManager shared] pushViewController:[WKStickerCollectionVC new] animated:YES];
+    }
 }
 
 @end

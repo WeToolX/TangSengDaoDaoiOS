@@ -23,6 +23,247 @@
 #import "WKThemeUtil.h"
 #import "WKConversationPasswordVC.h"
 
+static NSString * const WKChatBackgroundDefaultKey = @"wk_default";
+
+@interface WKChatBackgroundCell : UICollectionViewCell
+
+@property(nonatomic,strong) UIImageView *previewImgView;
+@property(nonatomic,strong) UILabel *titleLbl;
+
+-(void)refreshWithURL:(NSURL*)url isDefault:(BOOL)isDefault;
+
+@end
+
+@implementation WKChatBackgroundCell
+
++(NSString*)cellId {
+    return @"WKChatBackgroundCell";
+}
+
+-(instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if(self) {
+        self.contentView.backgroundColor = WKApp.shared.config.cellBackgroundColor;
+        self.contentView.layer.cornerRadius = 8.0f;
+        self.contentView.layer.masksToBounds = YES;
+        [self.contentView addSubview:self.previewImgView];
+        [self.contentView addSubview:self.titleLbl];
+    }
+    return self;
+}
+
+-(UIImageView *)previewImgView {
+    if(!_previewImgView) {
+        _previewImgView = [UIImageView new];
+        _previewImgView.contentMode = UIViewContentModeScaleAspectFill;
+        _previewImgView.clipsToBounds = YES;
+    }
+    return _previewImgView;
+}
+
+-(UILabel *)titleLbl {
+    if(!_titleLbl) {
+        _titleLbl = [UILabel new];
+        _titleLbl.textAlignment = NSTextAlignmentCenter;
+        _titleLbl.textColor = WKApp.shared.config.defaultTextColor;
+        _titleLbl.font = [WKApp.shared.config appFontOfSize:14.0f];
+    }
+    return _titleLbl;
+}
+
+-(void)refreshWithURL:(NSURL*)url isDefault:(BOOL)isDefault {
+    self.previewImgView.image = nil;
+    self.titleLbl.hidden = !isDefault;
+    self.titleLbl.text = LLang(@"默认背景");
+    if(isDefault) {
+        self.previewImgView.backgroundColor = WKApp.shared.config.backgroundColor;
+    }else {
+        self.previewImgView.backgroundColor = [UIColor colorWithRed:245.0f/255.0f green:245.0f/255.0f blue:245.0f/255.0f alpha:1.0f];
+        [self.previewImgView lim_setImageWithURL:url placeholderImage:WKApp.shared.config.defaultPlaceholder];
+    }
+}
+
+-(void)layoutSubviews {
+    [super layoutSubviews];
+    self.previewImgView.frame = self.contentView.bounds;
+    self.titleLbl.frame = self.contentView.bounds;
+}
+
+@end
+
+@interface WKChatBackgroundListVC : WKBaseVC<UICollectionViewDataSource,UICollectionViewDelegateFlowLayout>
+
+@property(nonatomic,strong) WKChannel *channel;
+@property(nonatomic,strong) UICollectionView *collectionView;
+@property(nonatomic,strong) NSMutableArray<NSDictionary*> *items;
+
+-(instancetype)initWithChannel:(WKChannel*)channel;
+
+@end
+
+@implementation WKChatBackgroundListVC
+
+-(instancetype)initWithChannel:(WKChannel *)channel {
+    self = [super init];
+    if(self) {
+        _channel = channel;
+        _items = [NSMutableArray array];
+    }
+    return self;
+}
+
+-(void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = WKApp.shared.config.backgroundColor;
+    [self.view addSubview:self.collectionView];
+    [self requestData];
+}
+
+-(NSString *)langTitle {
+    return LLang(@"聊天背景");
+}
+
+-(UICollectionView *)collectionView {
+    if(!_collectionView) {
+        UICollectionViewFlowLayout *layout = [UICollectionViewFlowLayout new];
+        layout.minimumLineSpacing = 12.0f;
+        layout.minimumInteritemSpacing = 10.0f;
+        layout.sectionInset = UIEdgeInsetsMake(16.0f, 16.0f, 16.0f, 16.0f);
+        _collectionView = [[UICollectionView alloc] initWithFrame:[self visibleRect] collectionViewLayout:layout];
+        _collectionView.backgroundColor = WKApp.shared.config.backgroundColor;
+        _collectionView.dataSource = self;
+        _collectionView.delegate = self;
+        [_collectionView registerClass:WKChatBackgroundCell.class forCellWithReuseIdentifier:[WKChatBackgroundCell cellId]];
+    }
+    return _collectionView;
+}
+
+-(void)requestData {
+    [self.view showHUD];
+    __weak typeof(self) weakSelf = self;
+    [[WKAPIClient sharedClient] GET:@"common/chatbg" parameters:nil].then(^(id result){
+        [weakSelf.view hideHud];
+        [weakSelf.items removeAllObjects];
+        [weakSelf.items addObject:@{WKChatBackgroundDefaultKey:@(YES)}];
+        [weakSelf.items addObjectsFromArray:[weakSelf chatBackgroundsFromResponse:result]];
+        [weakSelf.collectionView reloadData];
+    }).catch(^(NSError *error){
+        [weakSelf.view hideHud];
+        [weakSelf.items removeAllObjects];
+        [weakSelf.items addObject:@{WKChatBackgroundDefaultKey:@(YES)}];
+        [weakSelf.collectionView reloadData];
+        [weakSelf.view showHUDWithHide:error.domain?:LLang(@"获取失败")];
+    });
+}
+
+-(NSArray<NSDictionary*>*)chatBackgroundsFromResponse:(id)response {
+    id list = response;
+    if([response isKindOfClass:NSDictionary.class]) {
+        NSDictionary *dict = response;
+        list = dict[@"list"]?:dict[@"data"]?:dict[@"items"]?:dict[@"backgrounds"]?:dict[@"chat_bg"];
+    }
+    if(![list isKindOfClass:NSArray.class]) {
+        return @[];
+    }
+    NSMutableArray *backgrounds = [NSMutableArray array];
+    for (id item in (NSArray*)list) {
+        if([item isKindOfClass:NSDictionary.class]) {
+            [backgrounds addObject:item];
+        }
+    }
+    return backgrounds;
+}
+
+-(BOOL)isDefaultItem:(NSDictionary*)item {
+    return [item[WKChatBackgroundDefaultKey] boolValue];
+}
+
+-(NSString*)chatBackgroundPreviewPath:(NSDictionary*)item {
+    return item[@"cover"]?:item[@"url"]?:item[@"path"]?:item[@"image"]?:item[@"bg"]?:item[@"background"];
+}
+
+-(NSString*)chatBackgroundSourcePath:(NSDictionary*)item {
+    return item[@"url"]?:item[@"cover"]?:item[@"path"]?:item[@"image"]?:item[@"bg"]?:item[@"background"];
+}
+
+-(NSURL*)chatBackgroundURLWithPath:(NSString*)path {
+    if(path.length == 0) {
+        return nil;
+    }
+    if([path hasPrefix:@"http"]) {
+        return [NSURL URLWithString:path];
+    }
+    return [WKApp.shared getFileFullUrl:path];
+}
+
+-(void)setDefaultBackground {
+    BOOL cleared = [WKThemeUtil clearChatBackground:self.channel];
+    if(cleared) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:WKNOTIFY_CHATBACKGROUND_CHANGE object:nil];
+        [self.view showHUDWithHide:LLang(@"设置成功")];
+    }else {
+        [self.view showHUDWithHide:LLang(@"设置失败")];
+    }
+}
+
+-(void)downloadAndSaveChatBackground:(NSDictionary*)item {
+    NSURL *sourceURL = [self chatBackgroundURLWithPath:[self chatBackgroundSourcePath:item]];
+    if(!sourceURL) {
+        [self.view showHUDWithHide:LLang(@"背景地址为空")];
+        return;
+    }
+
+    [self.view showHUD];
+    WKChannel *channel = self.channel;
+    NSURL *previewURL = [self chatBackgroundURLWithPath:[self chatBackgroundPreviewPath:item]];
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSData *data = [NSData dataWithContentsOfURL:sourceURL];
+        if(data.length > 0 && ![UIImage imageWithData:data] && previewURL && ![previewURL isEqual:sourceURL]) {
+            data = [NSData dataWithContentsOfURL:previewURL];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [weakSelf.view hideHud];
+            BOOL saved = [WKThemeUtil saveChatBackground:channel data:data style:WKApp.shared.config.style];
+            if(saved) {
+                [[NSNotificationCenter defaultCenter] postNotificationName:WKNOTIFY_CHATBACKGROUND_CHANGE object:nil];
+                [weakSelf.view showHUDWithHide:LLang(@"设置成功")];
+            }else {
+                [weakSelf.view showHUDWithHide:LLang(@"设置失败")];
+            }
+        });
+    });
+}
+
+-(NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
+    return self.items.count;
+}
+
+-(__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
+    WKChatBackgroundCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:[WKChatBackgroundCell cellId] forIndexPath:indexPath];
+    NSDictionary *item = self.items[indexPath.item];
+    BOOL isDefault = [self isDefaultItem:item];
+    NSURL *url = [self chatBackgroundURLWithPath:[self chatBackgroundPreviewPath:item]];
+    [cell refreshWithURL:url isDefault:isDefault];
+    return cell;
+}
+
+-(CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+    CGFloat width = floor((WKScreenWidth - 16.0f*2.0f - 10.0f*2.0f)/3.0f);
+    return CGSizeMake(width, width * 1.6f);
+}
+
+-(void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+    NSDictionary *item = self.items[indexPath.item];
+    if([self isDefaultItem:item]) {
+        [self setDefaultBackground];
+    }else {
+        [self downloadAndSaveChatBackground:item];
+    }
+}
+
+@end
+
 @interface WKConversationSettingVM ()<WKChannelManagerDelegate>
 
 @property(nonatomic,strong) WKChannelInfo *_channelInfo;
@@ -563,35 +804,8 @@
 }
 
 -(void)selectChatBackground {
-    __weak typeof(self) weakSelf = self;
-    UIView *topView = [WKNavigationManager shared].topViewController.view;
-    [topView showHUD];
-    [[WKAPIClient sharedClient] GET:@"common/chatbg" parameters:nil].then(^(id result){
-        [topView hideHud];
-        NSArray<NSDictionary*> *backgrounds = [weakSelf chatBackgroundsFromResponse:result];
-        WKActionSheetView2 *sheet = [WKActionSheetView2 initWithTip:nil];
-        [sheet addItem:[WKActionSheetButtonItem2 initWithTitle:LLang(@"默认背景") onClick:^{
-            BOOL cleared = [WKThemeUtil clearChatBackground:weakSelf.channel];
-            if(cleared) {
-                [[NSNotificationCenter defaultCenter] postNotificationName:WKNOTIFY_CHATBACKGROUND_CHANGE object:nil];
-                [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"设置成功")];
-            }else {
-                [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"设置失败")];
-            }
-        }]];
-        NSInteger index = 0;
-        for (NSDictionary *background in backgrounds) {
-            index++;
-            NSString *title = [weakSelf chatBackgroundTitle:background index:index];
-            [sheet addItem:[WKActionSheetButtonItem2 initWithTitle:title onClick:^{
-                [weakSelf downloadAndSaveChatBackground:background];
-            }]];
-        }
-        [sheet show];
-    }).catch(^(NSError *error){
-        [topView hideHud];
-        [[WKNavigationManager shared].topViewController.view showHUDWithHide:error.domain?:LLang(@"获取失败")];
-    });
+    WKChatBackgroundListVC *vc = [[WKChatBackgroundListVC alloc] initWithChannel:self.channel];
+    [[WKNavigationManager shared] pushViewController:vc animated:YES];
 }
 
 -(NSArray<NSDictionary*>*)chatBackgroundsFromResponse:(id)response {

@@ -33,7 +33,7 @@
 #pragma makr ->
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.title = LLang(@"添加单个表情");
+    self.title = LLang(@"添加的单个表情");
     [self establishControlsInStickerCollectionVC];
     
     [self.view addSubview:self.footerView];
@@ -62,7 +62,8 @@
 #pragma mark -> UI Controls
 - (void)establishControlsInStickerCollectionVC {
     if (!_dataArray) {
-        _dataArray = @[].mutableCopy;
+        _dataArray = @[[self setDefaultSticker]].mutableCopy;
+        [self getAllEmojisInStickerCollectionVC];
     }
     self.view.backgroundColor = UIColor.whiteColor;
     _isEdit = NO;

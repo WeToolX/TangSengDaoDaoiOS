@@ -27,6 +27,7 @@
 #define errorTipTopSpace 5.0f // 发送消息错误提示顶部距离
 
 static NSMutableDictionary *flameNodeCacheDict;
+static CGFloat const WKReactionBubbleBottomInset = 24.0f;
 
 
 @interface WKMessageCell ()<WKCheckBoxDelegate>
@@ -50,6 +51,8 @@ static NSMutableDictionary *flameNodeCacheDict;
 @property(nonatomic,strong) TapLongTapOrDoubleTapGestureRecognizerWrap *tapLongTapOrDoubleTapGestureRecognizerWrap;
 
 
++(CGFloat)reactionBubbleBottomInset:(WKMessageModel*)model;
+
 @end
 
 @implementation WKMessageCell
@@ -57,6 +60,7 @@ static NSMutableDictionary *flameNodeCacheDict;
 + (CGSize)sizeForMessage:(WKMessageModel *)model {
     CGSize contentSize = [[self class] contentSizeForMessage:model];
     UIEdgeInsets  contentEdgeInsets = [[self class] contentEdgeInsets:model];
+    contentEdgeInsets.bottom += [[self class] reactionBubbleBottomInset:model];
     UIEdgeInsets  bubbleEdgeInsets = [[self class] bubbleEdgeInsets:model contentSize:contentSize];
     CGFloat nicknameTop = 0.0f;
 //    if(!model.isSend) {
@@ -96,6 +100,13 @@ static NSMutableDictionary *flameNodeCacheDict;
 
 + (CGSize) contentSizeForMessage:(WKMessageModel *)model {
     return CGSizeMake(80.0f, 80.0f);
+}
+
++ (CGFloat)reactionBubbleBottomInset:(WKMessageModel*)model {
+    if(model.reactions && model.reactions.count > 0) {
+        return WKReactionBubbleBottomInset;
+    }
+    return 0.0f;
 }
 
 -(void) initUI {
@@ -721,6 +732,7 @@ static NSMutableDictionary *flameNodeCacheDict;
     
     Class cellClass = [self class];
     UIEdgeInsets contentInsets = [cellClass contentEdgeInsets:self.messageModel];
+    contentInsets.bottom += [cellClass reactionBubbleBottomInset:self.messageModel];
     
     CGSize contentSize = [cellClass contentSizeForMessage:self.messageModel];
     self.messageContentView.lim_size = contentSize;
