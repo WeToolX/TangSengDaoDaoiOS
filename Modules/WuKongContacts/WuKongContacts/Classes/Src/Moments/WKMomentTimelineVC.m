@@ -920,7 +920,7 @@ static UIImage *WKMomentImageNamed(NSString *name) {
         return;
     }
     self.loading = YES;
-    AnyPromise *promise = [self isMine] ? [self.vm timelineWithPageIndex:self.pageIndex pageSize:20] : [self.vm userTimeline:self.targetUID pageIndex:self.pageIndex pageSize:20];
+    AnyPromise *promise = self.uid.length == 0 ? [self.vm timelineWithPageIndex:self.pageIndex pageSize:20] : [self.vm userTimeline:self.targetUID pageIndex:self.pageIndex pageSize:20];
     __weak typeof(self) weakSelf = self;
     promise.then(^(NSArray<WKMomentPost*> *items) {
         weakSelf.loading = NO;

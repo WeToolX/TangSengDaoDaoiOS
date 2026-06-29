@@ -15,7 +15,7 @@
 }
 
 -(AnyPromise*)userTimeline:(NSString*)uid pageIndex:(NSInteger)pageIndex pageSize:(NSInteger)pageSize {
-    return [[WKAPIClient sharedClient] GET:[NSString stringWithFormat:@"users/%@/moments",uid ?: @""] parameters:@{@"page_index":@(pageIndex),@"page_size":@(pageSize)}].then(^id(id result) {
+    return [[WKAPIClient sharedClient] GET:[NSString stringWithFormat:@"moment/feed/%@",uid ?: @""] parameters:@{@"page_index":@(pageIndex),@"page_size":@(pageSize)}].then(^id(id result) {
         return [WKMomentPost postsFromResult:result];
     });
 }

@@ -25,3 +25,5 @@ require_pattern "verifyChatPasswordIfNeeded" "Modules/WuKongBase/WuKongBase/Clas
 require_pattern "\"login_pwd\":\\[WKMD5Util md5HexDigest:self\\.loginPwd" "Modules/WuKongBase/WuKongBase/Classes/Sections/Me/Security/WKConversationPasswordVM.m" "iOS hashes login password before setting chat password"
 require_pattern "common/chatbg" "Modules/WuKongBase/WuKongBase/Classes/Sections/ConversationSetting/WKConversationSettingVM.m" "iOS chat background comes from backend list"
 require_pattern "openUserTimeline:" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentTimelineVC.m" "iOS moments avatar opens user timeline"
+require_pattern "moment/feed/%@" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentVM.m" "iOS user moments use backend moment feed by uid"
+require_pattern "self\\.uid\\.length == 0 \\? \\[self\\.vm timelineWithPageIndex" "Modules/WuKongContacts/WuKongContacts/Classes/Src/Moments/WKMomentTimelineVC.m" "iOS only root moments page uses mixed friend feed"
