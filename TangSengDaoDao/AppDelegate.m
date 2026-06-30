@@ -18,6 +18,7 @@
 #import <WuKongBase/WKRTCAPI.h>
 #import <WuKongBase/WKRTCSessionManager.h>
 #import <WuKongBase/WKRTCMediaAdapter.h>
+#import <WuKongBase/WKRTCCallKitManager.h>
 #import "TangSengDaoDao-Swift.h"
 
 
@@ -81,8 +82,15 @@
     [WKApp shared].config = config;
     
     // 注册 LiveKit SPM 媒体引擎工厂，Pods 内 RTC 业务层通过协议调用。
+    [WKRTCLiveKitMediaEngine configureForCallKitAudioSession];
     WKRTCMediaAdapter.engineFactory = ^id<WKRTCMediaEngine> _Nonnull{
         return [WKRTCLiveKitMediaEngine new];
+    };
+    [WKRTCCallKitManager shared].audioSessionActivatedHandler = ^{
+        [WKRTCLiveKitMediaEngine callKitDidActivateAudioSession];
+    };
+    [WKRTCCallKitManager shared].audioSessionDeactivatedHandler = ^{
+        [WKRTCLiveKitMediaEngine callKitDidDeactivateAudioSession];
     };
     
     // app首页设置

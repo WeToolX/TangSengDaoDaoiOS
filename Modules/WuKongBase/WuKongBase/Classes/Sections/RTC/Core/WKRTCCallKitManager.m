@@ -6,6 +6,7 @@
 #import "WKRTCCallKitManager.h"
 #import <CallKit/CallKit.h>
 #import <AVFoundation/AVFoundation.h>
+#import <UIKit/UIKit.h>
 #import "WKRTCSessionManager.h"
 #import "WKRTCAudioRouteManager.h"
 #import "WKLogs.h"
@@ -16,6 +17,8 @@
 @property(nonatomic,strong) CXCallController *callController;
 @property(nonatomic,strong) NSMutableDictionary<NSString *, NSUUID *> *callIdToUUID;
 @property(nonatomic,strong) NSMutableDictionary<NSUUID *, NSString *> *uuidToCallId;
+@property(nonatomic,assign,readwrite) BOOL audioSessionActivated;
+@property(nonatomic,strong) NSMutableArray<void(^)(void)> *pendingAppActiveBlocks;
 
 @end
 
@@ -36,7 +39,9 @@
     _callController = [CXCallController new];
     _callIdToUUID = [NSMutableDictionary dictionary];
     _uuidToCallId = [NSMutableDictionary dictionary];
+    _pendingAppActiveBlocks = [NSMutableArray array];
     [self setupProvider];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appDidBecomeActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     return self;
 }
 
@@ -120,12 +125,11 @@
         return;
     }
     WKLogDebug(@"音视频系统通话接听动作，通话编号：%@", callId);
-    [[WKRTCSessionManager shared] acceptIncomingCallWithCompletion:^(NSError * _Nullable error) {
-        if(error) {
-            [action fail];
-        }else {
-            [action fulfill];
-        }
+    [action fulfill];
+    [self.provider reportCallWithUUID:action.callUUID endedAtDate:[NSDate date] reason:CXCallEndedReasonRemoteEnded];
+    [self removeCallMapping:action.callUUID];
+    [self runAfterAppActive:^{
+        [[WKRTCSessionManager shared] showIncomingCallAfterSystemAnswer];
     }];
 }
 
@@ -148,11 +152,47 @@
 
 - (void)provider:(CXProvider *)provider didActivateAudioSession:(AVAudioSession *)audioSession {
     WKLogDebug(@"音视频系统通话已激活音频会话");
+    self.audioSessionActivated = YES;
     [[WKRTCAudioRouteManager shared] prepareAudioSessionForCallType:[WKRTCSessionManager shared].currentPayload.callType];
+    if(self.audioSessionActivatedHandler) {
+        self.audioSessionActivatedHandler();
+    }
 }
 
 - (void)provider:(CXProvider *)provider didDeactivateAudioSession:(AVAudioSession *)audioSession {
     WKLogDebug(@"音视频系统通话已停用音频会话");
+    self.audioSessionActivated = NO;
+    if(self.audioSessionDeactivatedHandler) {
+        self.audioSessionDeactivatedHandler();
+    }
+}
+
+- (void)runAfterAppActive:(void(^)(void))block {
+    if(!block) {
+        return;
+    }
+    [self.pendingAppActiveBlocks addObject:[block copy]];
+    [self drainPendingAppActiveBlocksIfReady];
+}
+
+- (void)appDidBecomeActive:(NSNotification *)notification {
+    [self drainPendingAppActiveBlocksIfReady];
+}
+
+- (void)drainPendingAppActiveBlocksIfReady {
+    if(UIApplication.sharedApplication.applicationState != UIApplicationStateActive) {
+        WKLogDebug(@"音视频等待 App 激活后再执行系统接听");
+        return;
+    }
+    NSArray<void(^)(void)> *blocks = [self.pendingAppActiveBlocks copy];
+    [self.pendingAppActiveBlocks removeAllObjects];
+    for (void(^block)(void) in blocks) {
+        block();
+    }
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 @end

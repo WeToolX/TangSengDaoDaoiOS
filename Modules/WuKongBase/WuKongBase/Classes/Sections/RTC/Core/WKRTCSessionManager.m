@@ -292,7 +292,13 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         if(completion) completion(WKRTCError(-1, @"通话不存在"));
         return;
     }
+    if(self.state == WKRTCCallStateJoining || self.state == WKRTCCallStateConnecting || self.state == WKRTCCallStateActive) {
+        WKLogDebug(@"音视频忽略重复接听，通话编号：%@", self.currentPayload.callId ?: @"");
+        if(completion) completion(nil);
+        return;
+    }
     WKRTCCallPayload *payload = self.currentPayload;
+    [self presentCallViewControllerIfNeeded];
     [self requestPermissionForCallType:payload.callType completion:^(BOOL granted) {
         if(!granted) {
             NSError *error = WKRTCError(-1, payload.callType == WKRTCCallTypeVideo ? @"请先开启麦克风和摄像头权限" : @"请先开启麦克风权限");
@@ -323,6 +329,14 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
             if(completion) completion(safeError);
         });
     }];
+}
+
+- (void)showIncomingCallAfterSystemAnswer {
+    if(self.currentPayload.callId.length == 0 || self.state != WKRTCCallStateIncomingRinging) {
+        return;
+    }
+    [self presentCallViewControllerIfNeeded];
+    [self playRingtoneWithReason:@"来电"];
 }
 
 - (void)joinCallWithPayload:(WKRTCCallPayload *)payload joinCode:(NSString *)joinCode completion:(void (^)(NSError * _Nullable))completion {
@@ -509,6 +523,14 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         WKLogWarn(@"音视频当前已有通话，忽略新的来电：%@", payload.callId);
         return;
     }
+    if(self.state != WKRTCCallStateIdle && self.state != WKRTCCallStateEnded && self.state != WKRTCCallStateFailed && [self isCurrentCall:payload.callId]) {
+        WKLogDebug(@"音视频忽略重复来电：%@", payload.callId);
+        [self presentCallViewControllerIfNeeded];
+        if(reportCallKit && self.state == WKRTCCallStateIncomingRinging) {
+            [[WKRTCCallKitManager shared] reportIncomingCall:payload completion:nil];
+        }
+        return;
+    }
     [self beginNewSessionGeneration];
     self.currentPayload = payload;
     self.currentCallResp = nil;
@@ -554,7 +576,9 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         [self stopRingtone];
     }
     [self changeState:WKRTCCallStateConnecting];
-    [[WKRTCAudioRouteManager shared] prepareAudioSessionForCallType:payload.callType];
+    if(![WKRTCCallKitManager shared].audioSessionActivated) {
+        [[WKRTCAudioRouteManager shared] prepareAudioSessionForCallType:payload.callType];
+    }
     __weak typeof(self) weakSelf = self;
     self.mediaAdapter.stateChanged = ^(WKRTCMediaEngineState  _Nonnull state, NSError * _Nullable error) {
         [weakSelf handleMediaState:state error:error];
@@ -751,6 +775,14 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
 - (void)presentCallViewControllerIfNeeded {
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController *top = [WKNavigationManager shared].topViewController;
+        if(!top.view.window) {
+            UIWindow *window = [[WKApp shared] findWindow] ?: UIApplication.sharedApplication.keyWindow;
+            top = window.rootViewController ?: top;
+        }
+        if(!top) {
+            WKLogWarn(@"音视频无法展示通话页：当前没有可用窗口");
+            return;
+        }
         if([top isKindOfClass:WKRTCCallViewController.class]) {
             if(!top.isBeingDismissed && top.view.window) {
                 [self hideFloatingCall];

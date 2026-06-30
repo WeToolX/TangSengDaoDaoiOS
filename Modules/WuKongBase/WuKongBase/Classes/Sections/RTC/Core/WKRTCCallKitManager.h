@@ -13,6 +13,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype)shared;
 
+@property(nonatomic,assign,readonly) BOOL audioSessionActivated;
+@property(nonatomic,copy,nullable) void(^audioSessionActivatedHandler)(void);
+@property(nonatomic,copy,nullable) void(^audioSessionDeactivatedHandler)(void);
+
 /// 上报系统来电，VoIP push 到达后必须尽快调用。
 - (void)reportIncomingCall:(WKRTCCallPayload *)payload completion:(void(^_Nullable)(NSError *_Nullable error))completion;
 
