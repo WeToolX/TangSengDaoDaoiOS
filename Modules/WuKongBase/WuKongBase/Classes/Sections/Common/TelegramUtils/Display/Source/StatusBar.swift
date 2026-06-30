@@ -67,9 +67,6 @@ public final class StatusBar: ASDisplayNode {
     
     var inCallNavigate: (() -> Void)?
     
-    private var proxyNode: StatusBarProxyNode?
-    private var removeProxyNodeScheduled = false
-    
     let offsetNode = ASDisplayNode()
     var callStatusBarNode: CallStatusBarNode? = nil
     
@@ -107,36 +104,6 @@ public final class StatusBar: ASDisplayNode {
     }
     
     func updateState(statusBar: UIView?, withSafeInsets: Bool, inCallNode: CallStatusBarNode?, animated: Bool) {
-        if let statusBar = statusBar {
-            self.removeProxyNodeScheduled = false
-            let resolvedStyle: StatusBarStyle
-            if inCallNode != nil && !self.ignoreInCall {
-                resolvedStyle = .White
-            } else {
-                resolvedStyle = self.statusBarStyle
-            }
-            if let proxyNode = self.proxyNode {
-                proxyNode.statusBarStyle = resolvedStyle
-            } else {
-                self.proxyNode = StatusBarProxyNode(statusBarStyle: resolvedStyle, statusBar: statusBar)
-                self.proxyNode!.isHidden = false
-                self.addSubnode(self.proxyNode!)
-            }
-        } else {
-            self.removeProxyNodeScheduled = true
-            
-            DispatchQueue.main.async(execute: { [weak self] in
-                if let strongSelf = self {
-                    if strongSelf.removeProxyNodeScheduled {
-                        strongSelf.removeProxyNodeScheduled = false
-                        strongSelf.proxyNode?.isHidden = true
-                        strongSelf.proxyNode?.removeFromSupernode()
-                        strongSelf.proxyNode = nil
-                    }
-                }
-            })
-        }
-        
         var ignoreInCall = self.ignoreInCall
         switch self.statusBarStyle {
             case .Black, .White:
