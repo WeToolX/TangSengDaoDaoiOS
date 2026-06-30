@@ -155,18 +155,6 @@
     return true;
   }
   
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wundeclared-selector"
-  static SEL promptForReplaceSelector;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    promptForReplaceSelector = NSSelectorFromString(@"_promptForReplace:");
-  });
-  if (action == promptForReplaceSelector) {
-    return false;
-  }
-#pragma clang diagnostic pop
-  
   if (action == @selector(toggleUnderline:)) {
     return false;
   }

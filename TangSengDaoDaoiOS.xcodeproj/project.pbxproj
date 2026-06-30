@@ -16,7 +16,6 @@
 		7130BFE124C6832F00B9E04B /* NotificationContent.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7130BFD224C6832F00B9E04B /* NotificationContent.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7132A15C240AB4B8007F9BE2 /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 7132A15B240AB4B8007F9BE2 /* libc++.tbd */; };
 		7132A163240ABB92007F9BE2 /* libc.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 7132A162240ABB92007F9BE2 /* libc.tbd */; };
-		7191FCB323A6139A00FFFDC1 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 7191FCB223A6139A00FFFDC1 /* README.md */; };
 		719FDA5D2595FBFC000C25D6 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 719FDA5F2595FBFC000C25D6 /* Localizable.strings */; };
 		71C88A0726CA06E4000A42EE /* SELUpdateAlert.m in Sources */ = {isa = PBXBuildFile; fileRef = 71C88A0426CA06E4000A42EE /* SELUpdateAlert.m */; };
 		71C88A0826CA06E4000A42EE /* SELUpdateAlertConst.m in Sources */ = {isa = PBXBuildFile; fileRef = 71C88A0526CA06E4000A42EE /* SELUpdateAlertConst.m */; };
@@ -39,7 +38,6 @@
 		71D6961323926E3700D092BA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 71D6961123926E3700D092BA /* LaunchScreen.storyboard */; };
 		71D6961623926E3700D092BA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 71D6961523926E3700D092BA /* main.m */; };
 		71DB3FA6239B5DE700181E94 /* WKMainTabController.m in Sources */ = {isa = PBXBuildFile; fileRef = 71DB3FA5239B5DE700181E94 /* WKMainTabController.m */; };
-		71F7E3DC2A47F66900E8D20D /* QUESTION.md in Resources */ = {isa = PBXBuildFile; fileRef = 71F7E3DB2A47F66900E8D20D /* QUESTION.md */; };
 		8E7A1C9B2D4F6A8012345678 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8E7A1C9A2D4F6A8012345678 /* PrivacyInfo.xcprivacy */; };
 		DD3056F14B28FDF4CA533D51 /* WKRTCLiveKitMediaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E87D969722FC862C872B1E4C /* WKRTCLiveKitMediaEngine.swift */; };
 		EE1BF60007AE888BBCD21EE8 /* Pods_TangSengDaoDaoiOSBase_TangSengDaoDaoiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5CA0841FAD4ACC73F9DC603F /* Pods_TangSengDaoDaoiOSBase_TangSengDaoDaoiOS.framework */; };
@@ -446,10 +444,8 @@
 			files = (
 				71D6961323926E3700D092BA /* LaunchScreen.storyboard in Resources */,
 				719FDA5D2595FBFC000C25D6 /* Localizable.strings in Resources */,
-				71F7E3DC2A47F66900E8D20D /* QUESTION.md in Resources */,
 				8E7A1C9B2D4F6A8012345678 /* PrivacyInfo.xcprivacy in Resources */,
 				71D6961023926E3700D092BA /* Assets.xcassets in Resources */,
-				7191FCB323A6139A00FFFDC1 /* README.md in Resources */,
 				71D6960E23926E3600D092BA /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -877,9 +873,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = DE5455F84CCB2C45ED689AA0 /* Pods-TangSengDaoDaoiOSBase-TangSengDaoDaoiOS.debug.xcconfig */;
 			buildSettings = {
-					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-					APS_ENVIRONMENT = development;
-					CLANG_ENABLE_MODULES = YES;
+				APS_ENVIRONMENT = development;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
@@ -946,19 +942,19 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 71018ED405ABC6ED8448075E /* Pods-TangSengDaoDaoiOSBase-TangSengDaoDaoiOS.release.xcconfig */;
 			buildSettings = {
-					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-					APS_ENVIRONMENT = production;
-					CLANG_ENABLE_MODULES = YES;
+				APS_ENVIRONMENT = production;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
 				CLANG_WARN_STRICT_PROTOTYPES = NO;
 				CODE_SIGN_ENTITLEMENTS = TangSengDaoDao/TangSengDaoDao.entitlements;
-					CODE_SIGN_IDENTITY = "Apple Distribution";
-					CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-					DEVELOPMENT_TEAM = 9S93G87F57;
+				DEVELOPMENT_TEAM = 9S93G87F57;
 				ENABLE_APP_INTENTS_METADATA_GENERATION = NO;
 				ENABLE_BITCODE = NO;
 				ENABLE_MODULE_VERIFIER = YES;

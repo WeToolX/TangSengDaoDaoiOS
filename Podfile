@@ -11,6 +11,32 @@ def apply_xcode_recommended_project_format(project)
     project.root_object.attributes['LastUpgradeCheck'] = '2610'
 end
 
+SDK_PRIVACY_MANIFESTS = {
+    'AFNetworking' => 'PrivacyManifests/AFNetworking/PrivacyInfo.xcprivacy',
+    'CocoaAsyncSocket' => 'PrivacyManifests/CocoaAsyncSocket/PrivacyInfo.xcprivacy',
+    'CocoaLumberjack' => 'PrivacyManifests/CocoaLumberjack/PrivacyInfo.xcprivacy',
+    'FMDB' => 'PrivacyManifests/FMDB/PrivacyInfo.xcprivacy',
+    'MBProgressHUD' => 'PrivacyManifests/MBProgressHUD/PrivacyInfo.xcprivacy',
+    'SDWebImage' => 'PrivacyManifests/SDWebImage/PrivacyInfo.xcprivacy',
+    'Starscream-framework' => 'PrivacyManifests/Starscream-framework/PrivacyInfo.xcprivacy',
+    'Toast' => 'PrivacyManifests/Toast/PrivacyInfo.xcprivacy',
+    'lottie-ios' => 'PrivacyManifests/lottie-ios/PrivacyInfo.xcprivacy'
+}.freeze
+
+def add_sdk_privacy_manifest(project, target)
+    manifest_path = SDK_PRIVACY_MANIFESTS[target.name]
+    return unless manifest_path && target.respond_to?(:resources_build_phase) && target.resources_build_phase
+
+    project_path = File.join('..', manifest_path)
+    group = project.groups.find { |candidate| candidate.display_name == 'PrivacyManifests' } || project.new_group('PrivacyManifests')
+    file_ref = project.files.find { |candidate| candidate.path == project_path } || group.new_file(project_path)
+    file_ref.last_known_file_type = 'text.xml'
+
+    return if target.resources_build_phase.files_references.any? { |candidate| candidate.path == file_ref.path }
+
+    target.resources_build_phase.add_file_reference(file_ref, true)
+end
+
 # Uncomment the next line to define a global platform for your project
  platform :ios, '15.0'
 workspace 'TangSengDaoDaoiOS.xcworkspace'
@@ -48,6 +74,8 @@ post_install do |installer|
                 end
             end
         end
+
+        add_sdk_privacy_manifest(installer.pods_project, target)
 
         target.build_configurations.each do |config|
             if target.respond_to?(:product_type) and target.product_type == "com.apple.product-type.bundle"

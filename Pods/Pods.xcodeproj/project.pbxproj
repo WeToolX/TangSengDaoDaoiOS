@@ -1111,6 +1111,15 @@
 		46D7C7FBAB7EDD302C4E3E430D578B8D /* buffer_dec.c in Sources */ = {isa = PBXBuildFile; fileRef = 1F6ACA0E32809E400FD09799283533B7 /* buffer_dec.c */; settings = {COMPILER_FLAGS = "-D_THREAD_SAFE -fno-objc-arc"; }; };
 		46DEE217D830A84D1A559F7A369AB514 /* RACEXTKeyPathCoding.h in Headers */ = {isa = PBXBuildFile; fileRef = 64CFF58055B3270219EF5D00E39840C7 /* RACEXTKeyPathCoding.h */; settings = {ATTRIBUTES = (Project, ); }; };
 		46E7A07B59D89F9EC2CB01F31B2CC181 /* WKNavigationBar.m in Sources */ = {isa = PBXBuildFile; fileRef = B0939506628DA1AFA5F91E18814A4796 /* WKNavigationBar.m */; };
+		46EB2E00024110 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 46EB2E00024100 /* PrivacyInfo.xcprivacy */; };
+		46EB2E00024130 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 46EB2E00024120 /* PrivacyInfo.xcprivacy */; };
+		46EB2E00024150 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 46EB2E00024140 /* PrivacyInfo.xcprivacy */; };
+		46EB2E00024170 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 46EB2E00024160 /* PrivacyInfo.xcprivacy */; };
+		46EB2E00024190 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 46EB2E00024180 /* PrivacyInfo.xcprivacy */; };
+		46EB2E000241B0 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 46EB2E000241A0 /* PrivacyInfo.xcprivacy */; };
+		46EB2E000241D0 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 46EB2E000241C0 /* PrivacyInfo.xcprivacy */; };
+		46EB2E000241F0 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 46EB2E000241E0 /* PrivacyInfo.xcprivacy */; };
+		46EB2E00024210 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 46EB2E00024200 /* PrivacyInfo.xcprivacy */; };
 		46F0658AF9EB6ABDCDDA471D1D0B581B /* ZLWeakProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 4FFFDF2630B38FCCEEF89C99D32539CE /* ZLWeakProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		46FD1C6DF8D775583C611D8FF02528C0 /* SwipeView.m in Sources */ = {isa = PBXBuildFile; fileRef = 19D7225EFAD41566BA79CEE9FCBBC31A /* SwipeView.m */; };
 		47303DAA9117CC3BC0A77492AB2130F8 /* ASInternalHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = E2CF3415A19E25778D2110622E6E44D6 /* ASInternalHelpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -6049,6 +6058,15 @@
 		46D4B8416BA43DF7ABFCBD937352A0B0 /* RACQueueScheduler+Subclass.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = "RACQueueScheduler+Subclass.h"; path = "ReactiveObjC/RACQueueScheduler+Subclass.h"; sourceTree = "<group>"; };
 		46D9315376017A38CEF74B9F9DC666C5 /* AFSecurityPolicy.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = AFSecurityPolicy.h; path = AFNetworking/AFSecurityPolicy.h; sourceTree = "<group>"; };
 		46E0D3A8CDE99DFB09B5F428BFEB30E7 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/MobileCoreServices.framework; sourceTree = DEVELOPER_DIR; };
+		46EB2E00024100 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ../PrivacyManifests/AFNetworking/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		46EB2E00024120 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ../PrivacyManifests/CocoaAsyncSocket/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		46EB2E00024140 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ../PrivacyManifests/CocoaLumberjack/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		46EB2E00024160 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ../PrivacyManifests/FMDB/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		46EB2E00024180 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ../PrivacyManifests/MBProgressHUD/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		46EB2E000241A0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ../PrivacyManifests/SDWebImage/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		46EB2E000241C0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = "../PrivacyManifests/Starscream-framework/PrivacyInfo.xcprivacy"; sourceTree = "<group>"; };
+		46EB2E000241E0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ../PrivacyManifests/Toast/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		46EB2E00024200 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = "../PrivacyManifests/lottie-ios/PrivacyInfo.xcprivacy"; sourceTree = "<group>"; };
 		46F2C57FD562283C0F0DB9E0D54AF0CC /* DDFileLogger.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = DDFileLogger.h; path = Sources/CocoaLumberjack/include/CocoaLumberjack/DDFileLogger.h; sourceTree = "<group>"; };
 		46F9A63BA399EFA9B5C8F42895149824 /* WKPCOnlineVC.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = WKPCOnlineVC.m; sourceTree = "<group>"; };
 		471A34914359CD4FB3207A751FA8CFD1 /* WKMemberListVC.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = WKMemberListVC.m; sourceTree = "<group>"; };
@@ -11913,6 +11931,22 @@
 			name = Pod;
 			sourceTree = "<group>";
 		};
+		46EB2E000240F0 /* PrivacyManifests */ = {
+			isa = PBXGroup;
+			children = (
+				46EB2E00024100 /* PrivacyInfo.xcprivacy */,
+				46EB2E00024120 /* PrivacyInfo.xcprivacy */,
+				46EB2E00024140 /* PrivacyInfo.xcprivacy */,
+				46EB2E00024160 /* PrivacyInfo.xcprivacy */,
+				46EB2E00024200 /* PrivacyInfo.xcprivacy */,
+				46EB2E00024180 /* PrivacyInfo.xcprivacy */,
+				46EB2E000241A0 /* PrivacyInfo.xcprivacy */,
+				46EB2E000241C0 /* PrivacyInfo.xcprivacy */,
+				46EB2E000241E0 /* PrivacyInfo.xcprivacy */,
+			);
+			name = PrivacyManifests;
+			sourceTree = "<group>";
+		};
 		48A48C482A4B8D2899EF4831F1BC972C /* Source */ = {
 			isa = PBXGroup;
 			children = (
@@ -15046,6 +15080,7 @@
 				C8B2438C8D4117371040D92BCF4CDF14 /* Development Pods */,
 				5B0FF2A5DEA2CC5449C30AED37C71AD4 /* Frameworks */,
 				AD158E9D6017602296AA0DC362482632 /* Pods */,
+				46EB2E000240F0 /* PrivacyManifests */,
 				225EF3AD512EA54364B249AC90901415 /* Products */,
 				EE85BAEC8FC0BD96904CA5484C604C45 /* Targets Support Files */,
 			);
@@ -19672,6 +19707,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46EB2E00024130 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -19703,6 +19739,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46EB2E00024150 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -19737,6 +19774,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46EB2E000241F0 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -19744,6 +19782,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46EB2E00024110 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -19773,6 +19812,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46EB2E00024170 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -19809,6 +19849,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46EB2E000241D0 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -19816,6 +19857,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46EB2E000241B0 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -19863,6 +19905,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46EB2E00024210 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -19894,6 +19937,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46EB2E00024190 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
