@@ -23,8 +23,8 @@
 
 
 #if DEBUG
-#define SERVER_IP @"192.168.110.206:8090" // xxx.xxx.xx.xx:8090
-#define HTTPS_ON false // https开关
+#define SERVER_IP @"api.qinghangim.com" // xxx.xxx.xx.xx:8090
+#define HTTPS_ON true // https开关
 #else
 #define SERVER_IP @"api.botgate.cn"
 #define HTTPS_ON true

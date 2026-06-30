@@ -239,7 +239,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     }
     [self postChannelCallChangeWithCommand:cmd payload:payload];
     if([cmd isEqualToString:WKRTCCMDInvite]) {
-        [self receiveIncomingPayload:payload reportCallKit:NO];
+        [self receiveIncomingPayload:payload reportCallKit:NO completion:nil];
     }else if([cmd isEqualToString:WKRTCCMDNotice]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:WKRTCNoticeDidReceiveNotification object:payload userInfo:[payload toDictionary]];
     }else if([cmd isEqualToString:WKRTCCMDJoined]) {
@@ -283,8 +283,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         return;
     }
     WKRTCCallPayload *callPayload = [WKRTCCallPayload modelWithDictionary:rtcCall];
-    [self receiveIncomingPayload:callPayload reportCallKit:reportCallKit];
-    if(completion) completion();
+    [self receiveIncomingPayload:callPayload reportCallKit:reportCallKit completion:completion];
 }
 
 - (void)acceptIncomingCallWithCompletion:(void (^)(NSError * _Nullable))completion {
@@ -514,20 +513,26 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
 
 #pragma mark - 内部状态
 
-- (void)receiveIncomingPayload:(WKRTCCallPayload *)payload reportCallKit:(BOOL)reportCallKit {
+- (void)receiveIncomingPayload:(WKRTCCallPayload *)payload reportCallKit:(BOOL)reportCallKit completion:(void (^)(void))completion {
     if(payload.callId.length == 0) {
         WKLogError(@"音视频来电数据缺少通话编号");
+        if(completion) completion();
         return;
     }
     if(self.state != WKRTCCallStateIdle && self.state != WKRTCCallStateEnded && self.state != WKRTCCallStateFailed && ![self isCurrentCall:payload.callId]) {
         WKLogWarn(@"音视频当前已有通话，忽略新的来电：%@", payload.callId);
+        if(completion) completion();
         return;
     }
     if(self.state != WKRTCCallStateIdle && self.state != WKRTCCallStateEnded && self.state != WKRTCCallStateFailed && [self isCurrentCall:payload.callId]) {
         WKLogDebug(@"音视频忽略重复来电：%@", payload.callId);
         [self presentCallViewControllerIfNeeded];
         if(reportCallKit && self.state == WKRTCCallStateIncomingRinging) {
-            [[WKRTCCallKitManager shared] reportIncomingCall:payload completion:nil];
+            [[WKRTCCallKitManager shared] reportIncomingCall:payload completion:^(NSError * _Nullable error) {
+                if(completion) completion();
+            }];
+        }else {
+            if(completion) completion();
         }
         return;
     }
@@ -540,7 +545,11 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     [self changeState:WKRTCCallStateIncomingRinging];
     [self presentCallViewControllerIfNeeded];
     if(reportCallKit) {
-        [[WKRTCCallKitManager shared] reportIncomingCall:payload completion:nil];
+        [[WKRTCCallKitManager shared] reportIncomingCall:payload completion:^(NSError * _Nullable error) {
+            if(completion) completion();
+        }];
+    }else {
+        if(completion) completion();
     }
 }
 

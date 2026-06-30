@@ -812,13 +812,17 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
     return self;
 }
 
--(instancetype)initWithActor:(WKMomentActor *)actor {
-    self = [self initWithUID:actor.uid];
+-(instancetype)initWithUID:(NSString *)uid name:(NSString *)name avatar:(NSString *)avatar {
+    self = [self initWithUID:uid];
     if(self) {
-        _targetDisplayName = actor.name;
-        _targetAvatar = actor.avatar;
+        _targetDisplayName = name;
+        _targetAvatar = avatar;
     }
     return self;
+}
+
+-(instancetype)initWithActor:(WKMomentActor *)actor {
+    return [self initWithUID:actor.uid name:actor.name avatar:actor.avatar];
 }
 
 -(void)viewDidLoad {

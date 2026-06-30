@@ -1891,15 +1891,11 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
 }
 
 - (UIWindow*) findWindow {
-    if(WKKeyboardService.shared.keyboardIsVisible) {
-        for (UIWindow *win in [UIApplication sharedApplication].windows) {
-            if([win isKindOfClass:NSClassFromString(@"UIRemoteKeyboardWindow")]) {
-                return win;
-            }
+    for (UIWindow *win in [[[UIApplication sharedApplication].windows reverseObjectEnumerator] allObjects]) {
+        if (!win.hidden && win.alpha > 0.0 && win.windowLevel == UIWindowLevelNormal) {
+            return win;
         }
     }
-    
-    
     return [UIApplication sharedApplication].keyWindow;
 }
 //

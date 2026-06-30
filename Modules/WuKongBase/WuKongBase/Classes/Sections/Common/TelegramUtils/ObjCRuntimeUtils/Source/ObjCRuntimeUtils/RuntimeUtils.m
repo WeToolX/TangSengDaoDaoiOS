@@ -2,19 +2,10 @@
 
 #import <objc/runtime.h>
 
-@interface CALayer ()
-
-- (unsigned int)contextId;
-- (void)setContextId:(unsigned int)contextId;
-
-@end
-
 @implementation RuntimeUtils
 
 + (CALayer * _Nonnull)makeLayerHostCopy:(CALayer * _Nonnull)another {
-    CALayer *result = [[NSClassFromString(@"CALayerHost") alloc] init];
-    [result setContextId:[another contextId]];
-    return result;
+    return [another presentationLayer] ?: [CALayer layer];
 }
 
 + (void)swizzleInstanceMethodOfClass:(Class)targetClass currentSelector:(SEL)currentSelector newSelector:(SEL)newSelector {

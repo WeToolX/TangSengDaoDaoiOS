@@ -123,6 +123,11 @@
         if(uid.length == 0) {
             return nil;
         }
+        WKChannelInfo *channelInfo = param[@"channel_info"];
+        BOOL isMine = [uid isEqualToString:[WKApp shared].loginInfo.uid];
+        if(!isMine && channelInfo.follow != WKChannelInfoFollowFriend) {
+            return nil;
+        }
         return @{
             @"height":@(0.0f),
             @"items":@[
@@ -130,7 +135,8 @@
                         @"class":WKLabelItemModel.class,
                         @"label":LLangW(@"朋友圈",weakSelf),
                         @"onClick":^{
-                            [[WKNavigationManager shared] pushViewController:[[WKMomentTimelineVC alloc] initWithUID:uid] animated:YES];
+                            NSString *name = channelInfo.remark.length > 0 ? channelInfo.remark : channelInfo.name;
+                            [[WKNavigationManager shared] pushViewController:[[WKMomentTimelineVC alloc] initWithUID:uid name:name avatar:channelInfo.logo] animated:YES];
                         }
                     },
             ],

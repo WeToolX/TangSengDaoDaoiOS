@@ -51,11 +51,6 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<false/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>“卿航IM”需要您的同意,才能访问相机﻿﻿，用于拍照聊天和扫一扫加好友</string>
 	<key>NSContactsUsageDescription</key>
@@ -76,19 +71,10 @@
 	<string>“卿航IM”需要您的同意,才能访问相册﻿﻿，用于聊天图片的发送</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>“卿航IM”需要您的同意,才能访问相册﻿﻿，用于聊天图片的发送</string>
-	<key>Privacy - Photo Library Additions Usage Description
-        
-        
-        Privacy - Photo Library Additions Usage Description
-        
-    </key>
-	<string>“卿航IM”需要您的同意,才能访问相册﻿﻿，用于聊天图片的发送</string>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>fetch</string>
 		<string>remote-notification</string>
 		<string>voip</string>
-		<string>audio</string>
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<false/>

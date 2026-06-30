@@ -40,6 +40,7 @@
 		71D6961623926E3700D092BA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 71D6961523926E3700D092BA /* main.m */; };
 		71DB3FA6239B5DE700181E94 /* WKMainTabController.m in Sources */ = {isa = PBXBuildFile; fileRef = 71DB3FA5239B5DE700181E94 /* WKMainTabController.m */; };
 		71F7E3DC2A47F66900E8D20D /* QUESTION.md in Resources */ = {isa = PBXBuildFile; fileRef = 71F7E3DB2A47F66900E8D20D /* QUESTION.md */; };
+		8E7A1C9B2D4F6A8012345678 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8E7A1C9A2D4F6A8012345678 /* PrivacyInfo.xcprivacy */; };
 		DD3056F14B28FDF4CA533D51 /* WKRTCLiveKitMediaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E87D969722FC862C872B1E4C /* WKRTCLiveKitMediaEngine.swift */; };
 		EE1BF60007AE888BBCD21EE8 /* Pods_TangSengDaoDaoiOSBase_TangSengDaoDaoiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5CA0841FAD4ACC73F9DC603F /* Pods_TangSengDaoDaoiOSBase_TangSengDaoDaoiOS.framework */; };
 		F5FC814952EAD766AA578A1F /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 914A8C2C562EE7A83EAE1FE3 /* LiveKit */; };
@@ -130,6 +131,7 @@
 		71DB3FA4239B5DE700181E94 /* WKMainTabController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WKMainTabController.h; sourceTree = "<group>"; };
 		71DB3FA5239B5DE700181E94 /* WKMainTabController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WKMainTabController.m; sourceTree = "<group>"; };
 		71F7E3DB2A47F66900E8D20D /* QUESTION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = QUESTION.md; sourceTree = "<group>"; };
+		8E7A1C9A2D4F6A8012345678 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		DE5455F84CCB2C45ED689AA0 /* Pods-TangSengDaoDaoiOSBase-TangSengDaoDaoiOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TangSengDaoDaoiOSBase-TangSengDaoDaoiOS.debug.xcconfig"; path = "Target Support Files/Pods-TangSengDaoDaoiOSBase-TangSengDaoDaoiOS/Pods-TangSengDaoDaoiOSBase-TangSengDaoDaoiOS.debug.xcconfig"; sourceTree = "<group>"; };
 		E87D969722FC862C872B1E4C /* WKRTCLiveKitMediaEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WKRTCLiveKitMediaEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -282,6 +284,7 @@
 				71D6960F23926E3700D092BA /* Assets.xcassets */,
 				71D6961123926E3700D092BA /* LaunchScreen.storyboard */,
 				71D6961423926E3700D092BA /* Info.plist */,
+				8E7A1C9A2D4F6A8012345678 /* PrivacyInfo.xcprivacy */,
 				71D6961523926E3700D092BA /* main.m */,
 				71DB3FA4239B5DE700181E94 /* WKMainTabController.h */,
 				71DB3FA5239B5DE700181E94 /* WKMainTabController.m */,
@@ -379,7 +382,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				CLASSPREFIX = WK;
-				DefaultBuildSystemTypeForWorkspace = Original;
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				ORGANIZATIONNAME = WK;
@@ -445,6 +447,7 @@
 				71D6961323926E3700D092BA /* LaunchScreen.storyboard in Resources */,
 				719FDA5D2595FBFC000C25D6 /* Localizable.strings in Resources */,
 				71F7E3DC2A47F66900E8D20D /* QUESTION.md in Resources */,
+				8E7A1C9B2D4F6A8012345678 /* PrivacyInfo.xcprivacy in Resources */,
 				71D6961023926E3700D092BA /* Assets.xcassets in Resources */,
 				7191FCB323A6139A00FFFDC1 /* README.md in Resources */,
 				71D6960E23926E3600D092BA /* Main.storyboard in Resources */,
@@ -874,8 +877,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = DE5455F84CCB2C45ED689AA0 /* Pods-TangSengDaoDaoiOSBase-TangSengDaoDaoiOS.debug.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
+					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					APS_ENVIRONMENT = development;
+					CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
@@ -942,18 +946,19 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 71018ED405ABC6ED8448075E /* Pods-TangSengDaoDaoiOSBase-TangSengDaoDaoiOS.release.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
+					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					APS_ENVIRONMENT = production;
+					CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CLANG_WARN_NULLABILITY_COMPLETENESS = NO;
 				CLANG_WARN_STRICT_PROTOTYPES = NO;
 				CODE_SIGN_ENTITLEMENTS = TangSengDaoDao/TangSengDaoDao.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+					CODE_SIGN_IDENTITY = "Apple Distribution";
+					CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = "";
+					DEVELOPMENT_TEAM = 9S93G87F57;
 				ENABLE_APP_INTENTS_METADATA_GENERATION = NO;
 				ENABLE_BITCODE = NO;
 				ENABLE_MODULE_VERIFIER = YES;

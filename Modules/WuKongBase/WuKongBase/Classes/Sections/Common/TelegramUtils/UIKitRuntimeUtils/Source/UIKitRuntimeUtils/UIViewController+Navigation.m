@@ -381,18 +381,4 @@ void applyKeyboardAutocorrection(UITextView * _Nonnull textView) {
     return result;
 }
 
-+ (void)initialize {
-    NSString *canAffectSelectorString = [@[@"_can", @"Affect", @"Status", @"Bar", @"Appearance"] componentsJoinedByString:@""];
-    SEL canAffectSelector = NSSelectorFromString(canAffectSelectorString);
-    Method shouldAffectMethod = class_getInstanceMethod(self, @selector(shouldAffectStatusBarAppearance));
-    IMP canAffectImplementation = method_getImplementation(shouldAffectMethod);
-    class_addMethod(self, canAffectSelector, canAffectImplementation, method_getTypeEncoding(shouldAffectMethod));
-    
-    NSString *canBecomeKeySelectorString = [NSString stringWithFormat:@"_%@", NSStringFromSelector(@selector(canBecomeKeyWindow))];
-    SEL canBecomeKeySelector = NSSelectorFromString(canBecomeKeySelectorString);
-    Method canBecomeKeyMethod = class_getInstanceMethod(self, @selector(canBecomeKeyWindow));
-    IMP canBecomeKeyImplementation = method_getImplementation(canBecomeKeyMethod);
-    class_addMethod(self, canBecomeKeySelector, canBecomeKeyImplementation, method_getTypeEncoding(canBecomeKeyMethod));
-}
-
 @end
