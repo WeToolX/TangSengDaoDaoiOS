@@ -5,7 +5,6 @@
 
 #import "WKMomentComposeVC.h"
 #import "WKMomentVM.h"
-#import <WuKongBase/WKPhotoBrowser.h>
 #import <WuKongBase/WKMediaPickerController.h>
 #import <WuKongBase/WKContactsSelectVC.h>
 #import "WKContactsLabelVM.h"
@@ -32,6 +31,7 @@
 @property(nonatomic,copy) NSString *visibilityType;
 @property(nonatomic,strong) NSMutableArray<NSString*> *visibilityUids;
 @property(nonatomic,strong) NSMutableArray<NSNumber*> *visibilityTagIds;
+@property(nonatomic,strong) WKMediaFetcher *mediaFetcher;
 @property(nonatomic,strong) WKMomentVM *vm;
 @end
 
@@ -95,8 +95,6 @@
     self.view.backgroundColor = WKApp.shared.config.cellBackgroundColor;
     [self.view addSubview:self.textView];
     [self.view addSubview:self.photoScrollView];
-    [self.view addSubview:self.addPhotoBtn];
-    [self.view addSubview:self.addVideoBtn];
     [self.view addSubview:self.optionBox];
     [self.navigationBar setRightView:self.sendBtn];
     [self reloadPhotos];
@@ -130,7 +128,7 @@
 
 -(UIButton *)addPhotoBtn {
     if(!_addPhotoBtn) {
-        _addPhotoBtn = [[UIButton alloc] initWithFrame:CGRectMake(24.0f, self.photoScrollView.lim_top, 88.0f, 88.0f)];
+        _addPhotoBtn = [[UIButton alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 88.0f, 88.0f)];
         _addPhotoBtn.backgroundColor = WKApp.shared.config.cellBackgroundColor;
         [_addPhotoBtn setTitle:@"+" forState:UIControlStateNormal];
         [_addPhotoBtn setTitleColor:WKApp.shared.config.tipColor forState:UIControlStateNormal];
@@ -144,7 +142,7 @@
 
 -(UIButton *)addVideoBtn {
     if(!_addVideoBtn) {
-        _addVideoBtn = [[UIButton alloc] initWithFrame:CGRectMake(self.addPhotoBtn.lim_right + 10.0f, self.photoScrollView.lim_top, 88.0f, 88.0f)];
+        _addVideoBtn = [[UIButton alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 88.0f, 88.0f)];
         _addVideoBtn.backgroundColor = WKApp.shared.config.cellBackgroundColor;
         [_addVideoBtn setTitle:LLang(@"视频") forState:UIControlStateNormal];
         [_addVideoBtn setTitleColor:WKApp.shared.config.tipColor forState:UIControlStateNormal];
@@ -239,15 +237,22 @@
         [self.view showHUDWithHide:LLang(@"最多选择9张图片")];
         return;
     }
+    self.mediaFetcher = [WKMediaFetcher new];
+    self.mediaFetcher.limit = remain;
+    self.mediaFetcher.allowTakePicture = NO;
+    self.mediaFetcher.mediaTypes = @[(NSString*)kUTTypeImage];
     __weak typeof(self) weakSelf = self;
-    [[WKPhotoBrowser shared] showPhotoLibraryWithSender:self selectCompressImageBlock:^(NSArray<NSData *> * _Nonnull images, NSArray<PHAsset *> * _Nonnull assets, BOOL isOriginal) {
-        for(NSData *data in images ?: @[]) {
-            if(weakSelf.imageDatas.count < 9) {
-                [weakSelf.imageDatas addObject:data];
-            }
+    [self.mediaFetcher fetchPhotoFromLibraryOfCompress:^(NSData *imageData, NSString *path, bool isSelectOriginalPhoto, PHAssetMediaType type, NSInteger left) {
+        if(type == PHAssetMediaTypeImage && imageData && weakSelf.imageDatas.count < 9) {
+            [weakSelf.imageDatas addObject:imageData];
         }
-        [weakSelf reloadPhotos];
-    } maxSelectCount:remain allowSelectVideo:NO];
+        if(left <= 0) {
+            [weakSelf reloadPhotos];
+            weakSelf.mediaFetcher = nil;
+        }
+    } cancel:^{
+        weakSelf.mediaFetcher = nil;
+    }];
 }
 
 -(void)addVideoPressed {
@@ -255,11 +260,11 @@
         [self.view showHUDWithHide:LLang(@"图片和视频不能同时发布")];
         return;
     }
-    WKMediaFetcher *fetcher = [WKMediaFetcher new];
-    fetcher.limit = 1;
-    fetcher.mediaTypes = @[(NSString*)kUTTypeMovie];
+    self.mediaFetcher = [WKMediaFetcher new];
+    self.mediaFetcher.limit = 1;
+    self.mediaFetcher.mediaTypes = @[(NSString*)kUTTypeMovie];
     __weak typeof(self) weakSelf = self;
-    [fetcher fetchPhotoFromLibrary:^(UIImage *img, NSString *path, bool isSelectOriginalPhoto, PHAssetMediaType type, NSInteger left) {
+    [self.mediaFetcher fetchPhotoFromLibrary:^(UIImage *img, NSString *path, bool isSelectOriginalPhoto, PHAssetMediaType type, NSInteger left) {
         if(type == PHAssetMediaTypeVideo && path.length > 0) {
             weakSelf.videoPath = [weakSelf normalizedVideoPath:path];
             weakSelf.videoCover = nil;
@@ -272,6 +277,9 @@
                 [weakSelf reloadPhotos];
             }];
         }
+        weakSelf.mediaFetcher = nil;
+    } cancel:^{
+        weakSelf.mediaFetcher = nil;
     }];
 }
 
@@ -316,10 +324,20 @@
         [self.photoScrollView addSubview:imageView];
         left = 92.0f;
     }
-    self.photoScrollView.contentSize = CGSizeMake(left, 88.0f);
+    BOOL showPhotoButton = !self.textOnly && self.videoPath.length == 0 && self.imageDatas.count < 9;
+    BOOL showVideoButton = !self.textOnly && self.videoPath.length == 0 && self.imageDatas.count == 0;
+    if(showPhotoButton) {
+        self.addPhotoBtn.frame = CGRectMake(left, 0.0f, 88.0f, 88.0f);
+        [self.photoScrollView addSubview:self.addPhotoBtn];
+        left += 98.0f;
+    }
+    if(showVideoButton) {
+        self.addVideoBtn.frame = CGRectMake(left, 0.0f, 88.0f, 88.0f);
+        [self.photoScrollView addSubview:self.addVideoBtn];
+        left += 98.0f;
+    }
+    self.photoScrollView.contentSize = CGSizeMake(MAX(left, self.photoScrollView.lim_width), 88.0f);
     self.photoScrollView.hidden = self.textOnly;
-    self.addPhotoBtn.hidden = self.textOnly || self.videoPath.length > 0 || self.imageDatas.count >= 9;
-    self.addVideoBtn.hidden = self.textOnly || self.videoPath.length > 0 || self.imageDatas.count > 0;
 }
 
 -(void)removePhotoTap:(UITapGestureRecognizer*)tap {

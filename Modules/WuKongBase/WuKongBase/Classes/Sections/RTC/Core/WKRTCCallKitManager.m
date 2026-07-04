@@ -6,7 +6,6 @@
 #import "WKRTCCallKitManager.h"
 #import <CallKit/CallKit.h>
 #import <AVFoundation/AVFoundation.h>
-#import <UIKit/UIKit.h>
 #import "WKRTCSessionManager.h"
 #import "WKRTCAudioRouteManager.h"
 #import "WKLogs.h"
@@ -18,7 +17,6 @@
 @property(nonatomic,strong) NSMutableDictionary<NSString *, NSUUID *> *callIdToUUID;
 @property(nonatomic,strong) NSMutableDictionary<NSUUID *, NSString *> *uuidToCallId;
 @property(nonatomic,assign,readwrite) BOOL audioSessionActivated;
-@property(nonatomic,strong) NSMutableArray<void(^)(void)> *pendingAppActiveBlocks;
 
 @end
 
@@ -39,9 +37,7 @@
     _callController = [CXCallController new];
     _callIdToUUID = [NSMutableDictionary dictionary];
     _uuidToCallId = [NSMutableDictionary dictionary];
-    _pendingAppActiveBlocks = [NSMutableArray array];
     [self setupProvider];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appDidBecomeActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     return self;
 }
 
@@ -65,7 +61,10 @@
     self.uuidToCallId[uuid] = payload.callId;
     
     CXCallUpdate *update = [CXCallUpdate new];
-    NSString *displayName = payload.fromName.length > 0 ? payload.fromName : (payload.fromUid.length > 0 ? payload.fromUid : @"音视频通话");
+    NSString *displayName = payload.fromName.length > 0 ? payload.fromName : WKRTCDisplayNameForUID(payload.fromUid);
+    if(displayName.length == 0) {
+        displayName = @"音视频通话";
+    }
     update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:displayName];
     update.localizedCallerName = displayName;
     update.hasVideo = payload.callType == WKRTCCallTypeVideo;
@@ -126,10 +125,10 @@
     }
     WKLogDebug(@"音视频系统通话接听动作，通话编号：%@", callId);
     [action fulfill];
-    [self.provider reportCallWithUUID:action.callUUID endedAtDate:[NSDate date] reason:CXCallEndedReasonRemoteEnded];
-    [self removeCallMapping:action.callUUID];
-    [self runAfterAppActive:^{
-        [[WKRTCSessionManager shared] showIncomingCallAfterSystemAnswer];
+    [[WKRTCSessionManager shared] acceptIncomingCallWithCompletion:^(NSError * _Nullable error) {
+        if(error) {
+            WKLogError(@"音视频系统通话接听后 App 接听失败：%@", error);
+        }
     }];
 }
 
@@ -165,34 +164,6 @@
     if(self.audioSessionDeactivatedHandler) {
         self.audioSessionDeactivatedHandler();
     }
-}
-
-- (void)runAfterAppActive:(void(^)(void))block {
-    if(!block) {
-        return;
-    }
-    [self.pendingAppActiveBlocks addObject:[block copy]];
-    [self drainPendingAppActiveBlocksIfReady];
-}
-
-- (void)appDidBecomeActive:(NSNotification *)notification {
-    [self drainPendingAppActiveBlocksIfReady];
-}
-
-- (void)drainPendingAppActiveBlocksIfReady {
-    if(UIApplication.sharedApplication.applicationState != UIApplicationStateActive) {
-        WKLogDebug(@"音视频等待 App 激活后再执行系统接听");
-        return;
-    }
-    NSArray<void(^)(void)> *blocks = [self.pendingAppActiveBlocks copy];
-    [self.pendingAppActiveBlocks removeAllObjects];
-    for (void(^block)(void) in blocks) {
-        block();
-    }
-}
-
-- (void)dealloc {
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 @end

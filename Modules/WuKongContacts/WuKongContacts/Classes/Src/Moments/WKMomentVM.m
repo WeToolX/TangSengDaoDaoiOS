@@ -8,6 +8,18 @@
 
 @implementation WKMomentVM
 
+-(NSString*)uploadURLPathForType:(NSString*)type extension:(NSString*)extension {
+    NSString *uploadType = type.length > 0 ? type : @"moment";
+    if(![uploadType isEqualToString:@"moment"]) {
+        return [NSString stringWithFormat:@"file/upload?type=%@", uploadType];
+    }
+    NSString *uid = WKApp.shared.loginInfo.uid ?: @"";
+    NSString *ext = extension.length > 0 ? extension : @"jpg";
+    NSString *path = [NSString stringWithFormat:@"/%@/%@.%@", uid, NSUUID.UUID.UUIDString.lowercaseString, ext];
+    NSString *encodedPath = [path stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet] ?: path;
+    return [NSString stringWithFormat:@"file/upload?type=%@&path=%@", uploadType, encodedPath];
+}
+
 -(AnyPromise*)timelineWithPageIndex:(NSInteger)pageIndex pageSize:(NSInteger)pageSize {
     return [[WKAPIClient sharedClient] GET:@"moment/feed" parameters:@{@"page_index":@(pageIndex),@"page_size":@(pageSize)}].then(^id(id result) {
         return [WKMomentPost postsFromResult:result];
@@ -38,7 +50,7 @@
 
 -(AnyPromise*)publishText:(NSString*)text imagePaths:(NSArray<NSString*>*)imagePaths video:(WKMomentPublishMedia*)video mention:(NSDictionary*)mention visibility:(NSDictionary*)visibility {
     NSMutableArray *images = [NSMutableArray array];
-    NSInteger index = 0;
+    NSInteger index = 1;
     for(NSString *path in imagePaths ?: @[]) {
         [images addObject:@{@"media_url":path ?: @"",@"width":@(0),@"height":@(0),@"size":@(0),@"sort_index":@(index++)}];
     }
@@ -94,7 +106,7 @@
 
 -(void)uploadImageData:(NSData*)data type:(NSString*)type completion:(void(^)(NSString * _Nullable path, NSError * _Nullable error))completion {
     NSString *uploadType = type.length > 0 ? type : @"moment";
-    [[WKAPIClient sharedClient] GET:[NSString stringWithFormat:@"file/upload?type=%@",uploadType] parameters:nil].then(^(NSDictionary *result) {
+    [[WKAPIClient sharedClient] GET:[self uploadURLPathForType:uploadType extension:@"jpg"] parameters:nil].then(^(NSDictionary *result) {
         NSString *url = result[@"url"];
         if(url.length == 0) {
             if(completion) {
@@ -119,7 +131,8 @@
 
 -(void)uploadFilePath:(NSString*)filePath type:(NSString*)type completion:(void(^)(NSString * _Nullable path, NSError * _Nullable error))completion {
     NSString *uploadType = type.length > 0 ? type : @"moment";
-    [[WKAPIClient sharedClient] GET:[NSString stringWithFormat:@"file/upload?type=%@",uploadType] parameters:nil].then(^(NSDictionary *result) {
+    NSString *ext = filePath.pathExtension.length > 0 ? filePath.pathExtension : @"mp4";
+    [[WKAPIClient sharedClient] GET:[self uploadURLPathForType:uploadType extension:ext] parameters:nil].then(^(NSDictionary *result) {
         NSString *url = result[@"url"];
         if(url.length == 0) {
             if(completion) completion(nil,[NSError errorWithDomain:LLang(@"上传地址为空") code:-1 userInfo:nil]);

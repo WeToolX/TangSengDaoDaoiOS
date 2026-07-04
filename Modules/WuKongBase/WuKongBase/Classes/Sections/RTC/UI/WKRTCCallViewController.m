@@ -127,7 +127,7 @@ static NSString *WKRTCSafeName(NSString *name) {
 @property(nonatomic,strong) UILabel *titleLabel;
 @property(nonatomic,strong) UILabel *subtitleLabel;
 
-- (void)configureWithTitle:(NSString *)title subtitle:(NSString *)subtitle participants:(NSArray<NSString *> *)participants participantStates:(NSDictionary<NSString *, WKRTCMediaParticipantState *> *)participantStates;
+- (void)configureWithTitle:(NSString *)title subtitle:(NSString *)subtitle participants:(NSArray<NSString *> *)participants participantStates:(NSDictionary<NSString *, WKRTCMediaParticipantState *> *)participantStates channel:(WKChannel *)channel;
 
 @end
 
@@ -189,10 +189,10 @@ static NSString *WKRTCSafeName(NSString *name) {
     self.subtitleLabel.frame = CGRectMake(0.0f, 156.0f, self.bounds.size.width, 24.0f);
 }
 
-- (void)configureWithTitle:(NSString *)title subtitle:(NSString *)subtitle participants:(NSArray<NSString *> *)participants participantStates:(NSDictionary<NSString *, WKRTCMediaParticipantState *> *)participantStates {
+- (void)configureWithTitle:(NSString *)title subtitle:(NSString *)subtitle participants:(NSArray<NSString *> *)participants participantStates:(NSDictionary<NSString *, WKRTCMediaParticipantState *> *)participantStates channel:(WKChannel *)channel {
     for (NSInteger i = 0; i < self.avatarLabels.count; i++) {
         NSString *participantId = i < participants.count ? participants[i] : @"";
-        NSString *name = participantId.length > 0 ? WKRTCDisplayNameForUID(participantId) : @"";
+        NSString *name = participantId.length > 0 ? WKRTCDisplayNameForUIDInChannel(participantId, channel) : @"";
         self.avatarLabels[i].hidden = participantId.length == 0;
         self.avatarLabels[i].text = name.length > 0 ? [name substringToIndex:1] : @"";
         WKRTCMediaParticipantState *state = participantStates[participantId];
@@ -1087,7 +1087,14 @@ static NSString *WKRTCSafeName(NSString *name) {
 
 - (NSString *)displayNameForParticipantId:(NSString *)participantId {
     NSString *uid = [self avatarUIDForParticipantId:participantId];
-    NSString *name = WKRTCDisplayNameForUID(uid);
+    WKRTCCallPayload *payload = self.session.currentPayload;
+    NSString *name = nil;
+    if(payload.channelType == WK_GROUP) {
+        WKChannel *channel = [WKChannel channelID:payload.channelId channelType:payload.channelType];
+        name = WKRTCDisplayNameForUIDInChannel(uid, channel);
+    }else {
+        name = WKRTCDisplayNameForUID(uid);
+    }
     return WKRTCSafeName(name);
 }
 
@@ -1113,7 +1120,7 @@ static NSString *WKRTCSafeName(NSString *name) {
     if(participantId.length == 0 || action.length == 0) {
         return;
     }
-    NSString *name = WKRTCDisplayNameForUID(participantId);
+    NSString *name = [self displayNameForParticipantId:participantId];
     NSString *message = [action isEqualToString:WKRTCMediaParticipantPresenceActionJoined] ? [NSString stringWithFormat:@"%@%@", name, LLang(@"已加入通话")] : [NSString stringWithFormat:@"%@%@", name, LLang(@"已离开通话")];
     [self.view makeToast:message];
 }
@@ -1154,7 +1161,8 @@ static NSString *WKRTCSafeName(NSString *name) {
     if(group) {
         NSString *title = [self displayNameForPayload:payload];
         NSString *subtitle = [self groupSubtitleIncoming:incoming active:active video:video];
-        [self.groupHeaderView configureWithTitle:title subtitle:subtitle participants:[self participantNames] participantStates:[self participantStates]];
+        WKChannel *channel = [WKChannel channelID:payload.channelId channelType:payload.channelType];
+        [self.groupHeaderView configureWithTitle:title subtitle:subtitle participants:[self participantNames] participantStates:[self participantStates] channel:channel];
     }
     
     if(group && video && active) {
@@ -1408,7 +1416,9 @@ static NSString *WKRTCSafeName(NSString *name) {
 
 - (NSString *)groupSubtitleIncoming:(BOOL)incoming active:(BOOL)active video:(BOOL)video {
     if(incoming) {
-        NSString *name = self.session.currentPayload.fromName.length > 0 ? self.session.currentPayload.fromName : self.session.currentPayload.fromUid;
+        WKRTCCallPayload *payload = self.session.currentPayload;
+        WKChannel *channel = [WKChannel channelID:payload.channelId channelType:payload.channelType];
+        NSString *name = payload.fromName.length > 0 ? payload.fromName : WKRTCDisplayNameForUIDInChannel(payload.fromUid, channel);
         if(name.length > 0) {
             return [NSString stringWithFormat:@"%@%@", name, video ? LLang(@"邀请你加入群视频") : LLang(@"邀请你加入群语音")];
         }
@@ -1424,7 +1434,9 @@ static NSString *WKRTCSafeName(NSString *name) {
 - (void)updateDuration {
     if(self.session.currentPayload.channelType == WK_GROUP) {
         NSString *subtitle = [self groupSubtitleIncoming:NO active:YES video:self.session.currentPayload.callType == WKRTCCallTypeVideo];
-        [self.groupHeaderView configureWithTitle:[self displayNameForPayload:self.session.currentPayload] subtitle:subtitle participants:[self participantNames] participantStates:[self participantStates]];
+        WKRTCCallPayload *payload = self.session.currentPayload;
+        WKChannel *channel = [WKChannel channelID:payload.channelId channelType:payload.channelType];
+        [self.groupHeaderView configureWithTitle:[self displayNameForPayload:payload] subtitle:subtitle participants:[self participantNames] participantStates:[self participantStates] channel:channel];
     }else{
         self.statusLabel.text = [self durationText];
     }
@@ -1464,7 +1476,7 @@ static NSString *WKRTCSafeName(NSString *name) {
 }
 
 - (NSString *)participantLineForId:(NSString *)participantId state:(WKRTCMediaParticipantState *)state {
-    NSString *displayName = participantId.length > 0 ? WKRTCDisplayNameForUID(participantId) : LLang(@"成员");
+    NSString *displayName = participantId.length > 0 ? [self displayNameForParticipantId:participantId] : LLang(@"成员");
     NSString *localUid = [self localParticipantId];
     if(localUid.length > 0 && [participantId isEqualToString:localUid]) {
         displayName = [NSString stringWithFormat:@"%@（%@）", displayName, LLang(@"我")];
@@ -1497,7 +1509,7 @@ static NSString *WKRTCSafeName(NSString *name) {
     if(payload.fromName.length > 0 && self.session.state == WKRTCCallStateIncomingRinging) {
         return payload.fromName;
     }
-    return payload.channelType == WK_GROUP ? (payload.channelId ?: LLang(@"群通话")) : (channelId ?: LLang(@"音视频通话"));
+    return payload.channelType == WK_GROUP ? LLang(@"群通话") : LLang(@"音视频通话");
 }
 
 - (void)refreshMainAvatarWithPayload:(WKRTCCallPayload *)payload {

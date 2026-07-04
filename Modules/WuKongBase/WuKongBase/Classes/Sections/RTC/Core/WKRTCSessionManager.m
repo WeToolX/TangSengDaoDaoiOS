@@ -330,14 +330,6 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     }];
 }
 
-- (void)showIncomingCallAfterSystemAnswer {
-    if(self.currentPayload.callId.length == 0 || self.state != WKRTCCallStateIncomingRinging) {
-        return;
-    }
-    [self presentCallViewControllerIfNeeded];
-    [self playRingtoneWithReason:@"来电"];
-}
-
 - (void)joinCallWithPayload:(WKRTCCallPayload *)payload joinCode:(NSString *)joinCode completion:(void (^)(NSError * _Nullable))completion {
     if(payload.callId.length == 0) {
         NSError *error = WKRTCError(-1, @"通话编号不能为空");

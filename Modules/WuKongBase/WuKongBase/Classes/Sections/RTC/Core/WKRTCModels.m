@@ -107,7 +107,21 @@ NSString *WKRTCDisplayNameForUID(NSString *uid) {
     if(info.name.length > 0) {
         return info.name;
     }
-    return safeUID;
+    return @"成员";
+}
+
+NSString *WKRTCDisplayNameForUIDInChannel(NSString *uid, WKChannel *channel) {
+    NSString *safeUID = WKRTCUIDFromParticipantID(uid);
+    if(safeUID.length == 0) {
+        return @"";
+    }
+    if(channel.channelType == WK_GROUP && channel.channelId.length > 0) {
+        WKChannelMember *member = [[WKSDK shared].channelManager getMember:channel uid:safeUID];
+        if(member.displayName.length > 0) {
+            return member.displayName;
+        }
+    }
+    return WKRTCDisplayNameForUID(safeUID);
 }
 
 NSString *WKRTCAvatarURLForUID(NSString *uid) {

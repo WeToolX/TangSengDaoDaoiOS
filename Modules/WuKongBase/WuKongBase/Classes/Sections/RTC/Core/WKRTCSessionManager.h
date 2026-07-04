@@ -35,9 +35,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// 接听当前来电。
 - (void)acceptIncomingCallWithCompletion:(void(^_Nullable)(NSError *_Nullable error))completion;
 
-/// 系统接听只用于唤醒 App，回到 App 后继续展示来电页并响铃。
-- (void)showIncomingCallAfterSystemAnswer;
-
 /// 加入指定通话，用于群聊顶部入口、持久通知入口和加入码入口。
 - (void)joinCallWithPayload:(WKRTCCallPayload *)payload joinCode:(NSString *_Nullable)joinCode completion:(void(^_Nullable)(NSError *_Nullable error))completion;
 

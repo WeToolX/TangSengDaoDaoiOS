@@ -92,7 +92,7 @@
     self.titleLabel.textColor = notice ? WKApp.shared.config.messageRecvTextColor : contentColor;
     if(notice) {
         NSString *callType = content.callType == WKRTCCallTypeVideo ? LLang(@"视频通话") : LLang(@"语音通话");
-        NSString *fromName = WKRTCDisplayNameForUID(content.fromUid);
+        NSString *fromName = WKRTCDisplayNameForUIDInChannel(content.fromUid, self.messageModel.channel);
         self.iconImageView.backgroundColor = endedNotice ? WKApp.shared.config.tipColor : WKApp.shared.config.themeColor;
         self.iconImageView.layer.cornerRadius = 22.0f;
         self.iconImageView.layer.masksToBounds = YES;

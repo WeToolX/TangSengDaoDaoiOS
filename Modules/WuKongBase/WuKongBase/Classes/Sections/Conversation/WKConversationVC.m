@@ -652,7 +652,7 @@
 
 -(void) configureRTCTopPanelWithPayload:(WKRTCCallPayload*)payload {
     self.rtcTopTitleLabel.text = LLang(@"正在通话，点击加入");
-    NSString *fromName = payload.fromName.length > 0 ? payload.fromName : payload.fromUid;
+    NSString *fromName = payload.fromName.length > 0 ? payload.fromName : WKRTCDisplayNameForUIDInChannel(payload.fromUid, self.channel);
     NSString *callType = payload.callType == WKRTCCallTypeVideo ? LLang(@"群视频通话") : LLang(@"群语音通话");
     if(fromName.length > 0) {
         self.rtcTopSubtitleLabel.text = [NSString stringWithFormat:@"%@%@%@", fromName, LLang(@"发起 · "), callType];

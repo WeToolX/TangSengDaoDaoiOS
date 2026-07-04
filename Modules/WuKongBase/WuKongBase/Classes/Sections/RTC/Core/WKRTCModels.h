@@ -148,8 +148,11 @@ FOUNDATION_EXPORT NSError *WKRTCNormalizeError(NSError *error, NSString *fallbac
 /// 将 LiveKit identity 转换为业务 UID；LiveKit identity 可能是 uid:device_id。
 FOUNDATION_EXPORT NSString *WKRTCUIDFromParticipantID(NSString *_Nullable participantId);
 
-/// 将用户 UID 转换为当前本地已知的展示昵称，取不到时返回 UID。
+/// 将用户 UID 转换为当前本地已知的展示昵称，取不到时返回通用成员名。
 FOUNDATION_EXPORT NSString *WKRTCDisplayNameForUID(NSString *_Nullable uid);
+
+/// 将用户 UID 转换为指定频道下的展示昵称，群聊优先使用群成员昵称。
+FOUNDATION_EXPORT NSString *WKRTCDisplayNameForUIDInChannel(NSString *_Nullable uid, WKChannel *_Nullable channel);
 
 /// 当前本地已知的用户头像 URL，取不到显式头像时回退到默认头像接口。
 FOUNDATION_EXPORT NSString *WKRTCAvatarURLForUID(NSString *_Nullable uid);
