@@ -18,7 +18,6 @@
 #import <WuKongBase/WKRTCAPI.h>
 #import <WuKongBase/WKRTCSessionManager.h>
 #import <WuKongBase/WKRTCMediaAdapter.h>
-#import <WuKongBase/WKRTCCallKitManager.h>
 #import "TangSengDaoDao-Swift.h"
 
 
@@ -26,7 +25,7 @@
 #define SERVER_IP @"api.qinghangim.com" // xxx.xxx.xx.xx:8090
 #define HTTPS_ON true // https开关
 #else
-#define SERVER_IP @"api.botgate.cn"
+#define SERVER_IP @"api.qinghangim.com"
 #define HTTPS_ON true
 #endif
 
@@ -82,15 +81,9 @@
     [WKApp shared].config = config;
     
     // 注册 LiveKit SPM 媒体引擎工厂，Pods 内 RTC 业务层通过协议调用。
-    [WKRTCLiveKitMediaEngine configureForCallKitAudioSession];
+    [WKRTCLiveKitMediaEngine configureForAppAudioSession];
     WKRTCMediaAdapter.engineFactory = ^id<WKRTCMediaEngine> _Nonnull{
         return [WKRTCLiveKitMediaEngine new];
-    };
-    [WKRTCCallKitManager shared].audioSessionActivatedHandler = ^{
-        [WKRTCLiveKitMediaEngine callKitDidActivateAudioSession];
-    };
-    [WKRTCCallKitManager shared].audioSessionDeactivatedHandler = ^{
-        [WKRTCLiveKitMediaEngine callKitDidDeactivateAudioSession];
     };
     
     // app首页设置
@@ -184,7 +177,7 @@
 
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
     WKLogDebug(@"收到普通远程通知");
-    [[WKRTCSessionManager shared] handleRemotePayload:userInfo reportCallKit:NO completion:nil];
+    [[WKRTCSessionManager shared] handleRemotePayload:userInfo completion:nil];
     [WKApp.shared application:application didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler];
 }
 
@@ -195,7 +188,7 @@
 
 #pragma mark - PushKit
 
-// 注册 PushKit，RTC 离线来电依赖 VoIP push 唤醒后再上报 CallKit。
+// 注册 PushKit，RTC 离线来电依赖 VoIP push 唤醒后进入应用内通话页。
 - (void)registerVoIPPush {
     self.voipRegistry = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
     self.voipRegistry.delegate = self;
@@ -238,7 +231,7 @@ withCompletionHandler:(void (^)(void))completion {
         return;
     }
     WKLogDebug(@"收到网络电话来电推送");
-    [[WKRTCSessionManager shared] handleRemotePayload:payload.dictionaryPayload reportCallKit:YES completion:completion];
+    [[WKRTCSessionManager shared] handleRemotePayload:payload.dictionaryPayload completion:completion];
 }
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
     

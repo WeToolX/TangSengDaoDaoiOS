@@ -130,7 +130,6 @@
     "UIKit",
     "MapKit",
     "AVFoundation",
-    "QuickLook",
-    "CallKit"
+    "QuickLook"
   ]
 }

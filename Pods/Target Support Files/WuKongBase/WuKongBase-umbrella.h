@@ -365,7 +365,6 @@
 #import <WuKongBase/WKVoiceMessageCell.h>
 #import <WuKongBase/WKRTCAPI.h>
 #import <WuKongBase/WKRTCAudioRouteManager.h>
-#import <WuKongBase/WKRTCCallKitManager.h>
 #import <WuKongBase/WKRTCMediaAdapter.h>
 #import <WuKongBase/WKRTCModels.h>
 #import <WuKongBase/WKRTCSessionManager.h>

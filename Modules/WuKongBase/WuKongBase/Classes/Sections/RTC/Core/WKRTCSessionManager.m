@@ -7,7 +7,6 @@
 #import <AVFoundation/AVFoundation.h>
 #import "WKRTCAPI.h"
 #import "WKRTCAudioRouteManager.h"
-#import "WKRTCCallKitManager.h"
 #import "WKRTCCallViewController.h"
 #import "WKNavigationManager.h"
 #import "WKApp.h"
@@ -216,7 +215,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
                 return;
             }
             WKLogError(@"音视频发起通话失败：%@", error);
-            [self finishWithState:WKRTCCallStateFailed reason:error.localizedDescription ?: @"发起通话失败" notifyCallKit:NO];
+            [self finishWithState:WKRTCCallStateFailed reason:error.localizedDescription ?: @"发起通话失败"];
             [self showToast:error.localizedDescription ?: @"发起通话失败"];
         });
     }];
@@ -239,7 +238,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     }
     [self postChannelCallChangeWithCommand:cmd payload:payload];
     if([cmd isEqualToString:WKRTCCMDInvite]) {
-        [self receiveIncomingPayload:payload reportCallKit:NO completion:nil];
+        [self receiveIncomingPayload:payload completion:nil];
     }else if([cmd isEqualToString:WKRTCCMDNotice]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:WKRTCNoticeDidReceiveNotification object:payload userInfo:[payload toDictionary]];
     }else if([cmd isEqualToString:WKRTCCMDJoined]) {
@@ -248,7 +247,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         }
     }else if([cmd isEqualToString:WKRTCCMDRejected]) {
         if([self isCurrentCall:payload.callId]) {
-            [self finishWithState:WKRTCCallStateEnded reason:@"对方已拒绝" notifyCallKit:YES];
+            [self finishWithState:WKRTCCallStateEnded reason:@"对方已拒绝"];
         }
     }else if([cmd isEqualToString:WKRTCCMDCancelled]) {
         if(ignoredCancel) {
@@ -257,20 +256,20 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         }
         if([self isCurrentCall:payload.callId]) {
             NSString *reason = [payload.reason isEqualToString:@"answered_on_other_device"] ? @"已在其他设备接听" : @"通话已取消";
-            [self finishWithState:WKRTCCallStateEnded reason:reason notifyCallKit:YES];
+            [self finishWithState:WKRTCCallStateEnded reason:reason];
         }
     }else if([cmd isEqualToString:WKRTCCMDClosed]) {
         if([self isCurrentCall:payload.callId]) {
-            [self finishWithState:WKRTCCallStateEnded reason:@"通话已结束" notifyCallKit:YES];
+            [self finishWithState:WKRTCCallStateEnded reason:@"通话已结束"];
         }
     }else if([cmd isEqualToString:WKRTCCMDTimeout]) {
         if([self isCurrentCall:payload.callId]) {
-            [self finishWithState:WKRTCCallStateEnded reason:@"通话已超时" notifyCallKit:YES];
+            [self finishWithState:WKRTCCallStateEnded reason:@"通话已超时"];
         }
     }
 }
 
-- (void)handleRemotePayload:(NSDictionary *)payload reportCallKit:(BOOL)reportCallKit completion:(void (^)(void))completion {
+- (void)handleRemotePayload:(NSDictionary *)payload completion:(void (^)(void))completion {
     NSDictionary *rtcCall = nil;
     if([payload[@"rtc_call"] isKindOfClass:NSDictionary.class]) {
         rtcCall = payload[@"rtc_call"];
@@ -283,7 +282,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         return;
     }
     WKRTCCallPayload *callPayload = [WKRTCCallPayload modelWithDictionary:rtcCall];
-    [self receiveIncomingPayload:callPayload reportCallKit:reportCallKit completion:completion];
+    [self receiveIncomingPayload:callPayload completion:completion];
 }
 
 - (void)acceptIncomingCallWithCompletion:(void (^)(NSError * _Nullable))completion {
@@ -324,7 +323,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
             }
             NSError *safeError = WKRTCNormalizeError(error, @"接听失败");
             WKLogError(@"音视频接听失败：%@", safeError);
-            [self finishWithState:WKRTCCallStateFailed reason:safeError.localizedDescription notifyCallKit:YES];
+            [self finishWithState:WKRTCCallStateFailed reason:safeError.localizedDescription];
             if(completion) completion(safeError);
         });
     }];
@@ -380,7 +379,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
             }
             NSError *safeError = WKRTCNormalizeError(error, @"加入通话失败");
             WKLogError(@"音视频加入通话失败：%@", safeError);
-            [self finishWithState:WKRTCCallStateFailed reason:safeError.localizedDescription notifyCallKit:YES];
+            [self finishWithState:WKRTCCallStateFailed reason:safeError.localizedDescription];
             if(completion) completion(safeError);
         });
     }];
@@ -395,10 +394,10 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     NSString *callId = self.currentPayload.callId;
     [self changeState:WKRTCCallStateEnding];
     [[WKRTCAPI shared] rejectCall:callId].then(^{
-        [self finishWithState:WKRTCCallStateEnded reason:@"已拒绝" notifyCallKit:YES];
+        [self finishWithState:WKRTCCallStateEnded reason:@"已拒绝"];
     }).catch(^(NSError *error){
         WKLogError(@"音视频拒绝通话失败：%@", error);
-        [self finishWithState:WKRTCCallStateEnded reason:@"已拒绝" notifyCallKit:YES];
+        [self finishWithState:WKRTCCallStateEnded reason:@"已拒绝"];
     });
 }
 
@@ -422,10 +421,10 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     }
     
     promise.then(^{
-        [self finishWithState:WKRTCCallStateEnded reason:@"通话已结束" notifyCallKit:YES];
+        [self finishWithState:WKRTCCallStateEnded reason:@"通话已结束"];
     }).catch(^(NSError *error){
         WKLogError(@"音视频结束通话接口失败，本地仍断开房间：%@", error);
-        [self finishWithState:WKRTCCallStateEnded reason:@"通话已结束" notifyCallKit:YES];
+        [self finishWithState:WKRTCCallStateEnded reason:@"通话已结束"];
     });
 }
 
@@ -505,7 +504,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
 
 #pragma mark - 内部状态
 
-- (void)receiveIncomingPayload:(WKRTCCallPayload *)payload reportCallKit:(BOOL)reportCallKit completion:(void (^)(void))completion {
+- (void)receiveIncomingPayload:(WKRTCCallPayload *)payload completion:(void (^)(void))completion {
     if(payload.callId.length == 0) {
         WKLogError(@"音视频来电数据缺少通话编号");
         if(completion) completion();
@@ -519,13 +518,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     if(self.state != WKRTCCallStateIdle && self.state != WKRTCCallStateEnded && self.state != WKRTCCallStateFailed && [self isCurrentCall:payload.callId]) {
         WKLogDebug(@"音视频忽略重复来电：%@", payload.callId);
         [self presentCallViewControllerIfNeeded];
-        if(reportCallKit && self.state == WKRTCCallStateIncomingRinging) {
-            [[WKRTCCallKitManager shared] reportIncomingCall:payload completion:^(NSError * _Nullable error) {
-                if(completion) completion();
-            }];
-        }else {
-            if(completion) completion();
-        }
+        if(completion) completion();
         return;
     }
     [self beginNewSessionGeneration];
@@ -536,13 +529,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     self.ending = NO;
     [self changeState:WKRTCCallStateIncomingRinging];
     [self presentCallViewControllerIfNeeded];
-    if(reportCallKit) {
-        [[WKRTCCallKitManager shared] reportIncomingCall:payload completion:^(NSError * _Nullable error) {
-            if(completion) completion();
-        }];
-    }else {
-        if(completion) completion();
-    }
+    if(completion) completion();
 }
 
 - (void)connectLiveKitWithResp:(WKRTCCallResp *)resp payload:(WKRTCCallPayload *)payload activeAfterConnected:(BOOL)activeAfterConnected {
@@ -569,7 +556,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     }
     if(resp.livekit.url.length == 0 || resp.livekit.token.length == 0) {
         NSError *error = WKRTCError(-1, @"媒体连接信息为空");
-        [self finishWithState:WKRTCCallStateFailed reason:error.localizedDescription notifyCallKit:YES];
+        [self finishWithState:WKRTCCallStateFailed reason:error.localizedDescription];
         if(completion) completion(error);
         return;
     }
@@ -577,9 +564,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         [self stopRingtone];
     }
     [self changeState:WKRTCCallStateConnecting];
-    if(![WKRTCCallKitManager shared].audioSessionActivated) {
-        [[WKRTCAudioRouteManager shared] prepareAudioSessionForCallType:payload.callType];
-    }
+    [[WKRTCAudioRouteManager shared] prepareAudioSessionForCallType:payload.callType];
     __weak typeof(self) weakSelf = self;
     self.mediaAdapter.stateChanged = ^(WKRTCMediaEngineState  _Nonnull state, NSError * _Nullable error) {
         [weakSelf handleMediaState:state error:error];
@@ -592,7 +577,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         }
         if(error) {
             NSError *safeError = WKRTCNormalizeError(error, @"连接媒体房间失败");
-            [self finishWithState:WKRTCCallStateFailed reason:safeError.localizedDescription notifyCallKit:YES];
+            [self finishWithState:WKRTCCallStateFailed reason:safeError.localizedDescription];
             if(completion) completion(safeError);
             return;
         }
@@ -617,7 +602,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     }else if([state isEqualToString:WKRTCMediaEngineStateDisconnected]) {
         WKLogDebug(@"音视频媒体房间已断开");
     }else if([state isEqualToString:WKRTCMediaEngineStateFailed]) {
-        [self finishWithState:WKRTCCallStateFailed reason:error.localizedDescription ?: @"媒体连接失败" notifyCallKit:YES];
+        [self finishWithState:WKRTCCallStateFailed reason:error.localizedDescription ?: @"媒体连接失败"];
     }
 }
 
@@ -652,7 +637,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
         NSString *participantUID = WKRTCUIDFromParticipantID(participantId);
         if(participantUID.length > 0 && ![participantUID isEqualToString:localUid] && [participantUID isEqualToString:peerUid]) {
             WKLogDebug(@"音视频私聊对方已离开，按挂断处理：%@", participantId);
-            [self finishWithState:WKRTCCallStateEnded reason:@"对方已离开，通话已结束" notifyCallKit:YES];
+            [self finishWithState:WKRTCCallStateEnded reason:@"对方已离开，通话已结束"];
         }
     }
 }
@@ -741,7 +726,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     [self notifyChange];
 }
 
-- (void)finishWithState:(WKRTCCallState)state reason:(NSString *)reason notifyCallKit:(BOOL)notifyCallKit {
+- (void)finishWithState:(WKRTCCallState)state reason:(NSString *)reason {
     [self beginNewSessionGeneration];
     NSString *callId = self.currentPayload.callId ?: @"";
     WKLogDebug(@"音视频结束本地通话，通话编号：%@，原因：%@", callId, reason ?: @"");
@@ -751,9 +736,6 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     [self.mediaAdapter stopPictureInPictureWithCompletion:nil];
     [self.mediaAdapter disconnectWithCompletion:nil];
     [[WKRTCAudioRouteManager shared] deactivateAudioSession];
-    if(notifyCallKit && callId.length > 0) {
-        [[WKRTCCallKitManager shared] endCallIfNeeded:callId reason:reason];
-    }
     self.ending = NO;
     self.connectedAt = 0;
     self.currentCallResp = nil;

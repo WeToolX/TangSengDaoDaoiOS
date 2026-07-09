@@ -35,9 +35,9 @@
 
 - `device_id` 使用现有 Keychain 持久化的 `UIDevice getUUID`，发起、加入接口放在 body，拒绝、取消、关闭、离开等接口放在 header。
 - PushKit VoIP token 上传时 `device_type=IOS`，`bundle_id` 使用主 Bundle ID 加 `.voip`。
-- 收到 VoIP push 后先解析 `rtc_call.call_id`，立即进入本地来电流程并上报 CallKit；用户接听后再调用 `join` 获取 LiveKit token。
+- 收到 VoIP push 后先解析 `rtc_call.call_id`，立即进入应用内来电流程；用户接听后再调用 `join` 获取 LiveKit token。
 - LiveKit token 只来自后端发起或加入接口响应，不持久化，不写日志。
-- 收到 `rtc.closed`、`rtc.cancelled`、`rtc.timeout` 等终态 CMD 后，立即断开 LiveKit 并关闭 CallKit/应用内通话页。
+- 收到 `rtc.closed`、`rtc.cancelled`、`rtc.timeout` 等终态 CMD 后，立即断开 LiveKit 并关闭应用内通话页。
 
 ## 本次已补齐能力
 

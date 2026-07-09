@@ -41,31 +41,13 @@ final class WKRTCLiveKitMediaEngine: NSObject, WKRTCMediaEngine, RoomDelegate, A
     private weak var pictureInPictureSourceView: UIView?
     private var didConfigureMultitaskingCamera = false
 
-    static func configureForCallKitAudioSession() {
+    static func configureForAppAudioSession() {
         AudioManager.shared.audioSession.isAutomaticConfigurationEnabled = true
         do {
             try AudioManager.shared.setEngineAvailability(.default)
             print("音视频 LiveKit 音频引擎使用 App 音频会话")
         } catch {
             print("音视频 LiveKit 初始化音频引擎失败：\(error)")
-        }
-    }
-
-    static func callKitDidActivateAudioSession() {
-        do {
-            try AudioManager.shared.setEngineAvailability(.default)
-            print("音视频 LiveKit 音频引擎已随 CallKit 激活")
-        } catch {
-            print("音视频 LiveKit 激活音频引擎失败：\(error)")
-        }
-    }
-
-    static func callKitDidDeactivateAudioSession() {
-        do {
-            try AudioManager.shared.setEngineAvailability(.default)
-            print("音视频 LiveKit 音频引擎保持 App 音频会话")
-        } catch {
-            print("音视频 LiveKit 恢复音频引擎失败：\(error)")
         }
     }
 

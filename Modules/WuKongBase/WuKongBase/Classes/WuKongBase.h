@@ -148,7 +148,6 @@
 #import "WKRTCSessionManager.h"
 #import "WKRTCMediaAdapter.h"
 #import "WKRTCAudioRouteManager.h"
-#import "WKRTCCallKitManager.h"
 #import "WKRTCCallViewController.h"
 
 #import "WKConversationVC.h"

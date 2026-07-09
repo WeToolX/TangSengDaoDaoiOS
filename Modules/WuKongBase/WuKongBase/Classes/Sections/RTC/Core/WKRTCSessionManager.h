@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)handleRTCCommand:(NSString *)cmd param:(NSDictionary *)param;
 
 /// 处理 PushKit / APNs 中的 RTC payload。
-- (void)handleRemotePayload:(NSDictionary *)payload reportCallKit:(BOOL)reportCallKit completion:(void(^_Nullable)(void))completion;
+- (void)handleRemotePayload:(NSDictionary *)payload completion:(void(^_Nullable)(void))completion;
 
 /// 接听当前来电。
 - (void)acceptIncomingCallWithCompletion:(void(^_Nullable)(NSError *_Nullable error))completion;
