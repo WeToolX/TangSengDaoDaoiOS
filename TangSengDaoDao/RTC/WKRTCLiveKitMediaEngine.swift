@@ -865,10 +865,11 @@ private final class WKRTCLiveCommunicationCoordinator: NSObject, ConversationMan
         }
 
         let uuid = uuidForCallId(callId)
+        let callerDisplayName = displayName(from: rtcCall)
         let handle = Handle(
             type: .generic,
-            value: callerValue(from: rtcCall, fallback: callId),
-            displayName: displayName(from: rtcCall)
+            value: callerDisplayName,
+            displayName: callerDisplayName
         )
         let video = (rtcCall["call_type"] as? String) == "video"
         let capabilities: Conversation.Capabilities = video ? [.video] : []
@@ -982,19 +983,24 @@ private final class WKRTCLiveCommunicationCoordinator: NSObject, ConversationMan
         return nil
     }
 
-    private func callerValue(from rtcCall: NSDictionary, fallback: String) -> String {
-        if let fromUid = rtcCall["from_uid"] as? String, !fromUid.isEmpty {
-            return fromUid
-        }
-        if let channelId = rtcCall["channel_id"] as? String, !channelId.isEmpty {
-            return channelId
-        }
-        return fallback
-    }
-
     private func displayName(from rtcCall: NSDictionary) -> String {
         if let name = rtcCall["from_name"] as? String, !name.isEmpty {
             return name
+        }
+        if let fromUid = rtcCall["from_uid"] as? String, !fromUid.isEmpty {
+            if let channelId = rtcCall["channel_id"] as? String,
+               let channelType = rtcCall["channel_type"] as? NSNumber,
+               !channelId.isEmpty {
+                let channel = WKChannel(channelId, channelType: UInt8(truncating: channelType))
+                let name = WKRTCDisplayNameForUIDInChannel(fromUid, channel)
+                if !name.isEmpty {
+                    return name
+                }
+            }
+            let name = WKRTCDisplayNameForUID(fromUid)
+            if !name.isEmpty {
+                return name
+            }
         }
         let video = (rtcCall["call_type"] as? String) == "video"
         return video ? "视频通话" : "语音通话"

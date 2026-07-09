@@ -44,6 +44,7 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - iOS below 17.4 does not use PushKit as a naked call wake-up path.
 - Foreground RTC invite still opens `WKRTCCallViewController`.
 - Background or lock-screen RTC invite received over the IM socket reports to LiveCommunicationKit instead of using the app-side incoming-call page/ringtone path.
+- LiveCommunicationKit incoming call UI displays the caller nickname or remark instead of the caller UID when local profile data is available.
 - Normal APNs chat notifications still work.
 - iOS below 17.4 local/normal APNs call notifications open the existing RTC incoming-call page after the user taps the notification.
 - iOS below 17.4 pending local call notifications open the existing RTC incoming-call page when the user manually opens the app while the invite is still valid.
@@ -70,3 +71,5 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - Runtime log review on 2026-07-09 showed manually opening the app after a local call notification did not route the pending invite back to `WKRTCSessionManager`.
 - Follow-up local notification ringtone fix copies the bundled RTC ring asset to `Library/Sounds` before scheduling local call notifications.
 - Follow-up Release generic iOS build for pending invite activation and local notification ringtone preparation passed on 2026-07-09.
+- Runtime review on 2026-07-09 showed LiveCommunicationKit incoming call UI could display caller UID when `from_name` was absent.
+- Follow-up Release generic iOS build for LiveCommunicationKit caller display name fallback passed on 2026-07-09.
