@@ -41,6 +41,7 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - Built app links `LiveCommunicationKit.framework` and does not link `CallKit.framework`.
 - App Store-oriented build succeeds from `TangSengDaoDaoiOS.xcworkspace` with scheme `WuKongChatiOS`.
 - iOS 17.4+ incoming VoIP push reports a LiveCommunicationKit conversation before RTC UI presentation.
+- LiveCommunicationKit answer action keeps the in-app RTC page in incoming/joining/connecting flow until join succeeds or fails.
 - iOS below 17.4 does not use PushKit as a naked call wake-up path.
 - Foreground RTC invite still opens `WKRTCCallViewController`.
 - Background or lock-screen RTC invite received over the IM socket reports to LiveCommunicationKit instead of using the app-side incoming-call page/ringtone path.
@@ -73,3 +74,5 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - Follow-up Release generic iOS build for pending invite activation and local notification ringtone preparation passed on 2026-07-09.
 - Runtime review on 2026-07-09 showed LiveCommunicationKit incoming call UI could display caller UID when `from_name` was absent.
 - Follow-up Release generic iOS build for LiveCommunicationKit caller display name fallback passed on 2026-07-09.
+- Runtime review on 2026-07-09 showed LiveCommunicationKit answer action could enter the in-app RTC page while the pending session was still `Idle`, causing the page to close immediately.
+- Follow-up Release generic iOS build for preserving `IncomingRinging` state before LiveCommunicationKit answer passed on 2026-07-09.

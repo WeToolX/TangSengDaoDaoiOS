@@ -325,6 +325,7 @@ NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNoti
     self.audioEnabled = YES;
     self.videoEnabled = callPayload.callType == WKRTCCallTypeVideo;
     self.ending = NO;
+    self.state = WKRTCCallStateIncomingRinging;
     WKLogDebug(@"音视频已准备系统来电，等待系统接听：%@", callPayload.callId);
     [self notifyChange];
     return YES;
