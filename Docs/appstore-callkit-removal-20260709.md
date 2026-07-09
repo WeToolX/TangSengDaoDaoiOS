@@ -10,7 +10,7 @@ Confirmed direction: keep China mainland availability, remove CallKit from the i
 
 - Remove CallKit framework linkage from `WuKongBase`.
 - Remove `CXProvider`, `CXCallController`, and all system incoming-call reporting paths.
-- Keep PushKit handling only as a VoIP payload delivery path; incoming calls must open the existing in-app call UI.
+- Superseded for incoming-call delivery by `Docs/appstore-livecommunicationkit-20260709.md`: PushKit must only be used on iOS 17.4+ together with LiveCommunicationKit.
 - Keep RTC session, LiveKit media engine, ringtone, and app call screen behavior.
 - Rename app audio setup methods so no CallKit bridge remains in the app target.
 

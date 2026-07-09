@@ -6,6 +6,7 @@
 import Foundation
 import UIKit
 import AVKit
+import LiveCommunicationKit
 @preconcurrency import LiveKit
 import WuKongBase
 
@@ -784,5 +785,218 @@ final class WKRTCLiveKitMediaEngine: NSObject, WKRTCMediaEngine, RoomDelegate, A
                 "action": action
             ]
         )
+    }
+}
+
+@objc(WKRTCLiveCommunicationKitBridge)
+final class WKRTCLiveCommunicationKitBridge: NSObject {
+    @objc static let shared = WKRTCLiveCommunicationKitBridge()
+
+    private var coordinator: AnyObject?
+
+    @objc func isSupported() -> Bool {
+        if #available(iOS 17.4, *) {
+            return true
+        }
+        return false
+    }
+
+    @objc(reportIncomingPushPayload:completion:)
+    func reportIncomingPushPayload(_ payload: NSDictionary, completion: @escaping (Bool) -> Void) {
+        guard #available(iOS 17.4, *) else {
+            completion(false)
+            return
+        }
+        liveCommunicationCoordinator().reportIncomingPushPayload(payload, completion: completion)
+    }
+
+    @available(iOS 17.4, *)
+    private func liveCommunicationCoordinator() -> WKRTCLiveCommunicationCoordinator {
+        if let coordinator = coordinator as? WKRTCLiveCommunicationCoordinator {
+            return coordinator
+        }
+        let coordinator = WKRTCLiveCommunicationCoordinator()
+        self.coordinator = coordinator
+        return coordinator
+    }
+}
+
+@available(iOS 17.4, *)
+private final class WKRTCLiveCommunicationCoordinator: NSObject, ConversationManagerDelegate {
+    private let manager: ConversationManager
+    private var callIdByUUID: [UUID: String] = [:]
+    private var uuidByCallId: [String: UUID] = [:]
+
+    override init() {
+        let configuration = ConversationManager.Configuration(
+            ringtoneName: nil,
+            iconTemplateImageData: nil,
+            maximumConversationGroups: 1,
+            maximumConversationsPerConversationGroup: 1,
+            includesConversationInRecents: false,
+            supportsVideo: true,
+            supportedHandleTypes: [.generic]
+        )
+        manager = ConversationManager(configuration: configuration)
+        super.init()
+        manager.delegate = self
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(rtcSessionDidFinish(_:)),
+            name: Notification.Name("WKRTCSessionDidFinishNotification"),
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    func reportIncomingPushPayload(_ payload: NSDictionary, completion: @escaping (Bool) -> Void) {
+        guard let rtcCall = rtcCallDictionary(from: payload),
+              let callId = rtcCall["call_id"] as? String,
+              !callId.isEmpty else {
+            completion(false)
+            return
+        }
+        guard WKRTCSessionManager.shared().prepareIncomingRemotePayload(payload as? [AnyHashable: Any] ?? [:]) else {
+            completion(false)
+            return
+        }
+
+        let uuid = uuidForCallId(callId)
+        let handle = Handle(
+            type: .generic,
+            value: callerValue(from: rtcCall, fallback: callId),
+            displayName: displayName(from: rtcCall)
+        )
+        let video = (rtcCall["call_type"] as? String) == "video"
+        let capabilities: Conversation.Capabilities = video ? [.video] : []
+        let update = Conversation.Update(
+            localMember: nil,
+            members: [handle],
+            activeRemoteMembers: [handle],
+            capabilities: capabilities
+        )
+
+        Task { [weak self] in
+            do {
+                try await self?.manager.reportNewIncomingConversation(uuid: uuid, update: update)
+                DispatchQueue.main.async {
+                    completion(true)
+                }
+            } catch {
+                NSLog("LiveCommunicationKit report incoming failed: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(false)
+                }
+            }
+        }
+    }
+
+    func conversationManager(_ manager: ConversationManager, conversationChanged conversation: Conversation) {
+    }
+
+    func conversationManagerDidBegin(_ manager: ConversationManager) {
+    }
+
+    func conversationManagerDidReset(_ manager: ConversationManager) {
+        callIdByUUID.removeAll()
+        uuidByCallId.removeAll()
+    }
+
+    func conversationManager(_ manager: ConversationManager, perform action: ConversationAction) {
+        if let action = action as? JoinConversationAction {
+            performJoin(action)
+        } else if let action = action as? EndConversationAction {
+            performEnd(action)
+        } else {
+            action.fulfill()
+        }
+    }
+
+    func conversationManager(_ manager: ConversationManager, timedOutPerforming action: ConversationAction) {
+        action.fail()
+    }
+
+    func conversationManager(_ manager: ConversationManager, didActivate audioSession: AVAudioSession) {
+        WKRTCLiveKitMediaEngine.configureForAppAudioSession()
+    }
+
+    func conversationManager(_ manager: ConversationManager, didDeactivate audioSession: AVAudioSession) {
+    }
+
+    private func performJoin(_ action: JoinConversationAction) {
+        DispatchQueue.main.async {
+            WKRTCSessionManager.shared().acceptIncomingCall { error in
+                if error == nil {
+                    action.fulfill(dateConnected: Date())
+                } else {
+                    action.fail()
+                }
+            }
+        }
+    }
+
+    private func performEnd(_ action: EndConversationAction) {
+        DispatchQueue.main.async {
+            let session = WKRTCSessionManager.shared()
+            let stateValue = Int(session.state.rawValue)
+            if stateValue == 2 || stateValue == 0 {
+                session.rejectIncomingCall()
+            } else {
+                session.hangup()
+            }
+            action.fulfill(dateEnded: Date())
+        }
+    }
+
+    @objc private func rtcSessionDidFinish(_ notification: Notification) {
+        guard let callId = notification.userInfo?["call_id"] as? String,
+              let uuid = uuidByCallId[callId],
+              let conversation = manager.conversations.first(where: { $0.uuid == uuid }) else {
+            return
+        }
+        manager.reportConversationEvent(.conversationEnded(Date(), .remoteEnded), for: conversation)
+        uuidByCallId.removeValue(forKey: callId)
+        callIdByUUID.removeValue(forKey: uuid)
+    }
+
+    private func uuidForCallId(_ callId: String) -> UUID {
+        if let uuid = uuidByCallId[callId] {
+            return uuid
+        }
+        let uuid = UUID()
+        uuidByCallId[callId] = uuid
+        callIdByUUID[uuid] = callId
+        return uuid
+    }
+
+    private func rtcCallDictionary(from payload: NSDictionary) -> NSDictionary? {
+        if let rtcCall = payload["rtc_call"] as? NSDictionary {
+            return rtcCall
+        }
+        if payload["call_id"] is String {
+            return payload
+        }
+        return nil
+    }
+
+    private func callerValue(from rtcCall: NSDictionary, fallback: String) -> String {
+        if let fromUid = rtcCall["from_uid"] as? String, !fromUid.isEmpty {
+            return fromUid
+        }
+        if let channelId = rtcCall["channel_id"] as? String, !channelId.isEmpty {
+            return channelId
+        }
+        return fallback
+    }
+
+    private func displayName(from rtcCall: NSDictionary) -> String {
+        if let name = rtcCall["from_name"] as? String, !name.isEmpty {
+            return name
+        }
+        let video = (rtcCall["call_type"] as? String) == "video"
+        return video ? "视频通话" : "语音通话"
     }
 }

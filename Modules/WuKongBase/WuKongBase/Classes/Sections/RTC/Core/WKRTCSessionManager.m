@@ -21,6 +21,7 @@ static NSString * const WKRTCCMDCancelled = @"rtc.cancelled";
 static NSString * const WKRTCCMDClosed = @"rtc.closed";
 static NSString * const WKRTCCMDTimeout = @"rtc.timeout";
 static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WKRTCPictureInPictureRestoreRequested";
+static NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNotification";
 
 @interface WKRTCFloatingCallView : UIControl
 
@@ -283,6 +284,41 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     }
     WKRTCCallPayload *callPayload = [WKRTCCallPayload modelWithDictionary:rtcCall];
     [self receiveIncomingPayload:callPayload completion:completion];
+}
+
+- (BOOL)prepareIncomingRemotePayload:(NSDictionary *)payload {
+    NSDictionary *rtcCall = nil;
+    if([payload[@"rtc_call"] isKindOfClass:NSDictionary.class]) {
+        rtcCall = payload[@"rtc_call"];
+    }else if([payload[@"call_id"] isKindOfClass:NSString.class]) {
+        rtcCall = payload;
+    }
+    if(!rtcCall) {
+        WKLogDebug(@"音视频推送中没有通话字段");
+        return NO;
+    }
+    WKRTCCallPayload *callPayload = [WKRTCCallPayload modelWithDictionary:rtcCall];
+    if(callPayload.callId.length == 0) {
+        WKLogError(@"音视频来电数据缺少通话编号");
+        return NO;
+    }
+    if(self.state != WKRTCCallStateIdle && self.state != WKRTCCallStateEnded && self.state != WKRTCCallStateFailed && ![self isCurrentCall:callPayload.callId]) {
+        WKLogWarn(@"音视频当前已有通话，忽略新的系统来电：%@", callPayload.callId);
+        return NO;
+    }
+    if([self isCurrentCall:callPayload.callId]) {
+        WKLogDebug(@"音视频复用已准备的系统来电：%@", callPayload.callId);
+        return YES;
+    }
+    [self beginNewSessionGeneration];
+    self.currentPayload = callPayload;
+    self.currentCallResp = nil;
+    self.audioEnabled = YES;
+    self.videoEnabled = callPayload.callType == WKRTCCallTypeVideo;
+    self.ending = NO;
+    WKLogDebug(@"音视频已准备系统来电，等待系统接听：%@", callPayload.callId);
+    [self notifyChange];
+    return YES;
 }
 
 - (void)acceptIncomingCallWithCompletion:(void (^)(NSError * _Nullable))completion {
@@ -730,6 +766,7 @@ static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WK
     [self beginNewSessionGeneration];
     NSString *callId = self.currentPayload.callId ?: @"";
     WKLogDebug(@"音视频结束本地通话，通话编号：%@，原因：%@", callId, reason ?: @"");
+    [[NSNotificationCenter defaultCenter] postNotificationName:WKRTCSessionDidFinishNotification object:self userInfo:@{@"call_id": callId, @"reason": reason ?: @""}];
     [self markCallEnded:callId];
     [self stopRingtone];
     [self hideFloatingCall];

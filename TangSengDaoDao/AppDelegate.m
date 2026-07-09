@@ -188,8 +188,13 @@
 
 #pragma mark - PushKit
 
-// 注册 PushKit，RTC 离线来电依赖 VoIP push 唤醒后进入应用内通话页。
+// 注册 PushKit，RTC 离线来电通过 LiveCommunicationKit 上报系统通话界面。
 - (void)registerVoIPPush {
+    if (@available(iOS 17.4, *)) {
+    }else {
+        WKLogWarn(@"当前系统不支持 LiveCommunicationKit，跳过 VoIP push 注册");
+        return;
+    }
     self.voipRegistry = [[PKPushRegistry alloc] initWithQueue:dispatch_get_main_queue()];
     self.voipRegistry.delegate = self;
     self.voipRegistry.desiredPushTypes = [NSSet setWithObject:PKPushTypeVoIP];
@@ -197,6 +202,10 @@
 
 - (void)pushRegistry:(PKPushRegistry *)registry didUpdatePushCredentials:(PKPushCredentials *)pushCredentials forType:(PKPushType)type {
     if(![type isEqualToString:PKPushTypeVoIP]) {
+        return;
+    }
+    if(![[WKRTCLiveCommunicationKitBridge shared] isSupported]) {
+        WKLogWarn(@"当前系统不支持 LiveCommunicationKit，忽略 VoIP token");
         return;
     }
     NSData *tokenData = pushCredentials.token;
@@ -231,7 +240,17 @@ withCompletionHandler:(void (^)(void))completion {
         return;
     }
     WKLogDebug(@"收到网络电话来电推送");
-    [[WKRTCSessionManager shared] handleRemotePayload:payload.dictionaryPayload completion:completion];
+    if(![[WKRTCLiveCommunicationKitBridge shared] isSupported]) {
+        WKLogWarn(@"当前系统不支持 LiveCommunicationKit，VoIP push 交由普通 APNs 降级链路处理");
+        if(completion) completion();
+        return;
+    }
+    [[WKRTCLiveCommunicationKitBridge shared] reportIncomingPushPayload:payload.dictionaryPayload completion:^(BOOL handled) {
+        if(!handled) {
+            WKLogWarn(@"LiveCommunicationKit 上报来电失败");
+        }
+        if(completion) completion();
+    }];
 }
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
     
