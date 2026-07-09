@@ -47,6 +47,8 @@
 
 
 static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
+static NSString * const WKRTCPendingIncomingPayloadKey = @"WKRTCPendingIncomingPayloadKey";
+static NSString * const WKRTCIncomingNotificationSoundName = @"rtc_ring.mp3";
 
 
 
@@ -98,10 +100,11 @@ static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
    
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCBackgroundInvite:) name:@"WKRTCSessionDidReceiveBackgroundInviteNotification" object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCSessionDidFinish:) name:WKRTCSessionDidFinishNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCSessionDidFinish:) name:@"WKRTCSessionDidFinishNotification" object:nil];
     if (@available(iOS 10.0, *)) {
         [UNUserNotificationCenter currentNotificationCenter].delegate = self;
     }
+    [self prepareRTCIncomingNotificationSound];
     // app初始化
     [[WKApp shared] appInit];
     [self registerVoIPPush];
@@ -141,6 +144,7 @@ static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
     if(![callId isKindOfClass:NSString.class] || callId.length == 0) {
         return;
     }
+    [self clearPendingRTCInviteWithCallId:callId];
     [self removeRTCIncomingLocalNotificationWithCallId:callId];
 }
 
@@ -160,11 +164,12 @@ static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
     }
     NSString *body = [callType isEqualToString:@"video"] ? @"邀请你进行视频通话" : @"邀请你进行语音通话";
     NSString *identifier = [self rtcIncomingLocalNotificationIdentifier:callId];
+    [self savePendingRTCInvitePayload:@{@"rtc_call": rtcCall}];
     if (@available(iOS 10.0, *)) {
         UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
         content.title = fromName;
         content.body = body;
-        content.sound = [UNNotificationSound defaultSound];
+        content.sound = [self rtcIncomingUNNotificationSound];
         content.userInfo = @{@"rtc_call": rtcCall};
         UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:identifier content:content trigger:nil];
         [[UNUserNotificationCenter currentNotificationCenter] addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
@@ -178,7 +183,7 @@ static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
         UILocalNotification *localNotification = [[UILocalNotification alloc] init];
         localNotification.alertTitle = fromName;
         localNotification.alertBody = body;
-        localNotification.soundName = UILocalNotificationDefaultSoundName;
+        localNotification.soundName = [self rtcIncomingNotificationSoundName] ?: UILocalNotificationDefaultSoundName;
         localNotification.userInfo = @{@"call_id": callId};
         [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
     }
@@ -204,13 +209,88 @@ static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
     return [WKRTCIncomingLocalNotificationPrefix stringByAppendingString:callId ?: @""];
 }
 
+- (UNNotificationSound *)rtcIncomingUNNotificationSound API_AVAILABLE(ios(10.0)) {
+    NSString *soundName = [self rtcIncomingNotificationSoundName];
+    if(soundName.length > 0) {
+        return [UNNotificationSound soundNamed:soundName];
+    }
+    return [UNNotificationSound defaultSound];
+}
+
+- (NSString *)rtcIncomingNotificationSoundName {
+    return [self prepareRTCIncomingNotificationSound] ? WKRTCIncomingNotificationSoundName : nil;
+}
+
+- (BOOL)prepareRTCIncomingNotificationSound {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSURL *libraryURL = [[fileManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask] firstObject];
+    if(!libraryURL) {
+        return NO;
+    }
+    NSURL *soundsURL = [libraryURL URLByAppendingPathComponent:@"Sounds" isDirectory:YES];
+    NSURL *targetURL = [soundsURL URLByAppendingPathComponent:WKRTCIncomingNotificationSoundName];
+    if([fileManager fileExistsAtPath:targetURL.path]) {
+        return YES;
+    }
+    NSError *directoryError = nil;
+    if(![fileManager createDirectoryAtURL:soundsURL withIntermediateDirectories:YES attributes:nil error:&directoryError]) {
+        WKLogWarn(@"音视频通知铃声目录创建失败：%@", directoryError);
+        return NO;
+    }
+    NSBundle *baseBundle = [NSBundle bundleForClass:WKRTCSessionManager.class];
+    NSBundle *resourceBundle = [NSBundle bundleWithPath:[baseBundle pathForResource:@"WuKongBase_resources" ofType:@"bundle"]];
+    NSString *sourcePath = [resourceBundle pathForResource:@"rtc_ring" ofType:@"mp3" inDirectory:@"Other"];
+    if(sourcePath.length == 0) {
+        sourcePath = [[NSBundle mainBundle] pathForResource:@"rtc_ring" ofType:@"mp3"];
+    }
+    if(sourcePath.length == 0) {
+        return NO;
+    }
+    NSError *copyError = nil;
+    if(![fileManager copyItemAtURL:[NSURL fileURLWithPath:sourcePath] toURL:targetURL error:&copyError]) {
+        WKLogWarn(@"音视频通知铃声准备失败：%@", copyError);
+        return NO;
+    }
+    return YES;
+}
+
 - (void)openRTCInviteFromNotificationUserInfo:(NSDictionary *)userInfo completion:(void (^)(void))completion {
     if([userInfo[@"rtc_call"] isKindOfClass:NSDictionary.class] || [userInfo[@"call_id"] isKindOfClass:NSString.class]) {
         WKLogDebug(@"音视频点击来电通知，准备打开接听页");
+        NSDictionary *rtcCall = [userInfo[@"rtc_call"] isKindOfClass:NSDictionary.class] ? userInfo[@"rtc_call"] : userInfo;
+        [self clearPendingRTCInviteWithCallId:[rtcCall[@"call_id"] isKindOfClass:NSString.class] ? rtcCall[@"call_id"] : @""];
         [[WKRTCSessionManager shared] handleRemotePayload:userInfo completion:completion];
         return;
     }
     if(completion) completion();
+}
+
+- (void)openPendingRTCInviteIfNeeded {
+    NSDictionary *payload = [[NSUserDefaults standardUserDefaults] objectForKey:WKRTCPendingIncomingPayloadKey];
+    NSDictionary *rtcCall = [payload[@"rtc_call"] isKindOfClass:NSDictionary.class] ? payload[@"rtc_call"] : nil;
+    if(!rtcCall) {
+        return;
+    }
+    NSTimeInterval expireAt = [rtcCall[@"expire_at"] doubleValue];
+    if(expireAt > 0 && expireAt <= NSDate.date.timeIntervalSince1970) {
+        [self clearPendingRTCInviteWithCallId:[rtcCall[@"call_id"] isKindOfClass:NSString.class] ? rtcCall[@"call_id"] : @""];
+        return;
+    }
+    WKLogDebug(@"音视频手动打开 App，准备打开待接听页");
+    [self openRTCInviteFromNotificationUserInfo:payload completion:nil];
+}
+
+- (void)savePendingRTCInvitePayload:(NSDictionary *)payload {
+    [[NSUserDefaults standardUserDefaults] setObject:payload forKey:WKRTCPendingIncomingPayloadKey];
+}
+
+- (void)clearPendingRTCInviteWithCallId:(NSString *)callId {
+    NSDictionary *payload = [[NSUserDefaults standardUserDefaults] objectForKey:WKRTCPendingIncomingPayloadKey];
+    NSDictionary *rtcCall = [payload[@"rtc_call"] isKindOfClass:NSDictionary.class] ? payload[@"rtc_call"] : nil;
+    NSString *pendingCallId = [rtcCall[@"call_id"] isKindOfClass:NSString.class] ? rtcCall[@"call_id"] : @"";
+    if(callId.length == 0 || [pendingCallId isEqualToString:callId]) {
+        [[NSUserDefaults standardUserDefaults] removeObjectForKey:WKRTCPendingIncomingPayloadKey];
+    }
 }
 
 - (void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification {
@@ -221,6 +301,10 @@ static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
 didReceiveNotificationResponse:(UNNotificationResponse *)response
          withCompletionHandler:(void (^)(void))completionHandler API_AVAILABLE(ios(10.0)) {
     [self openRTCInviteFromNotificationUserInfo:response.notification.request.content.userInfo completion:completionHandler];
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+    [self openPendingRTCInviteIfNeeded];
 }
 
 -(void) applicationWillEnterForeground:(UIApplication *)application {
