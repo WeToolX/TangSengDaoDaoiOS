@@ -76,3 +76,6 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - Follow-up Release generic iOS build for LiveCommunicationKit caller display name fallback passed on 2026-07-09.
 - Runtime review on 2026-07-09 showed LiveCommunicationKit answer action could enter the in-app RTC page while the pending session was still `Idle`, causing the page to close immediately.
 - Follow-up Release generic iOS build for preserving `IncomingRinging` state before LiveCommunicationKit answer passed on 2026-07-09.
+- Runtime review on 2026-07-09 showed LiveCommunicationKit answer action could time out while waiting for the full app-side RTC join and media connection, causing the opened RTC page to close after a short delay.
+- Follow-up fix fulfills the LiveCommunicationKit join action immediately, then lets the existing app-side RTC join flow continue.
+- Follow-up Release generic iOS build for immediate LiveCommunicationKit join-action fulfillment passed on 2026-07-09.

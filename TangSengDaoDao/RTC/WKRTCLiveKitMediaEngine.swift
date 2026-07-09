@@ -929,11 +929,10 @@ private final class WKRTCLiveCommunicationCoordinator: NSObject, ConversationMan
 
     private func performJoin(_ action: JoinConversationAction) {
         DispatchQueue.main.async {
+            action.fulfill(dateConnected: Date())
             WKRTCSessionManager.shared().acceptIncomingCall { error in
-                if error == nil {
-                    action.fulfill(dateConnected: Date())
-                } else {
-                    action.fail()
+                if let error {
+                    NSLog("LiveCommunicationKit accept incoming failed after join action fulfilled: \(error.localizedDescription)")
                 }
             }
         }
