@@ -11,6 +11,7 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - iOS 17.4 and later: register PushKit VoIP token, receive VoIP push, report the incoming conversation to LiveCommunicationKit immediately, then route accepted actions into the existing RTC join flow.
 - iOS earlier than 17.4: do not use naked PushKit for calls. Use normal APNs alert notifications and enter the RTC flow after the user opens the app.
 - Foreground IM command (`rtc.invite`) continues to open the existing in-app call UI.
+- Background or lock-screen IM command (`rtc.invite`) must not open the in-app call UI or start the app-side ringtone directly; it must report to LiveCommunicationKit on supported systems.
 - End/cancel/timeout commands must end the active RTC session and report the ended conversation event to LiveCommunicationKit when applicable.
 - CallKit remains fully absent from source, Pods, and built binaries.
 
@@ -42,6 +43,7 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - iOS 17.4+ incoming VoIP push reports a LiveCommunicationKit conversation before RTC UI presentation.
 - iOS below 17.4 does not use PushKit as a naked call wake-up path.
 - Foreground RTC invite still opens `WKRTCCallViewController`.
+- Background or lock-screen RTC invite received over the IM socket reports to LiveCommunicationKit instead of using the app-side incoming-call page/ringtone path.
 - Normal APNs chat notifications still work.
 
 ## Progress
@@ -58,3 +60,5 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - `xcodebuild -workspace TangSengDaoDaoiOS.xcworkspace -scheme WuKongChatiOS -configuration Release -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO`: passed.
 - `rg "CallKit|CXProvider|CXCall|reportNewIncomingCall|CXCallController|CXAnswerCallAction|CXEndCallAction" TangSengDaoDao Modules Pods/Target\ Support\ Files Podfile Podfile.lock`: no active code references.
 - Release app binary links `PushKit.framework` and weak-links `LiveCommunicationKit.framework`; it does not link `CallKit.framework`.
+- Runtime log review on 2026-07-09 showed background/lock-screen `rtc.invite` was arriving over the IM socket, not PushKit. Follow-up fix routes that path through LiveCommunicationKit as well.
+- Follow-up Debug and Release generic iOS builds for the background IM invite path passed on 2026-07-09.

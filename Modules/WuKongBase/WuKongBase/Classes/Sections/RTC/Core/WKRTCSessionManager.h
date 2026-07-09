@@ -11,6 +11,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+FOUNDATION_EXPORT NSString * const WKRTCSessionDidReceiveBackgroundInviteNotification;
+FOUNDATION_EXPORT NSString * const WKRTCSessionDidFinishNotification;
+
 /// RTC 会话管理器，统一处理发起、接听、挂断、IM CMD 和 VoIP push。
 @interface WKRTCSessionManager : NSObject
 

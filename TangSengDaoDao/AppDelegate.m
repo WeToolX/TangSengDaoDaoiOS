@@ -93,6 +93,7 @@
     };
 
    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCBackgroundInvite:) name:@"WKRTCSessionDidReceiveBackgroundInviteNotification" object:nil];
     // app初始化
     [[WKApp shared] appInit];
     [self registerVoIPPush];
@@ -106,6 +107,24 @@
     }
    
     return YES;
+}
+
+- (void)handleRTCBackgroundInvite:(NSNotification *)notification {
+    NSDictionary *payload = notification.userInfo;
+    if(![payload isKindOfClass:NSDictionary.class]) {
+        return;
+    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if(![[WKRTCLiveCommunicationKitBridge shared] isSupported]) {
+            WKLogWarn(@"当前系统不支持 LiveCommunicationKit，后台在线来电等待普通 APNs 提醒");
+            return;
+        }
+        [[WKRTCLiveCommunicationKitBridge shared] reportIncomingPushPayload:payload completion:^(BOOL handled) {
+            if(!handled) {
+                WKLogWarn(@"LiveCommunicationKit 上报后台在线来电失败");
+            }
+        }];
+    });
 }
 
 -(void) applicationWillEnterForeground:(UIApplication *)application {

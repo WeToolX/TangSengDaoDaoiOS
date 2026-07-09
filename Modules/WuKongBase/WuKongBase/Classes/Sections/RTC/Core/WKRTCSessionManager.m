@@ -21,7 +21,8 @@ static NSString * const WKRTCCMDCancelled = @"rtc.cancelled";
 static NSString * const WKRTCCMDClosed = @"rtc.closed";
 static NSString * const WKRTCCMDTimeout = @"rtc.timeout";
 static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WKRTCPictureInPictureRestoreRequested";
-static NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNotification";
+NSString * const WKRTCSessionDidReceiveBackgroundInviteNotification = @"WKRTCSessionDidReceiveBackgroundInviteNotification";
+NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNotification";
 
 @interface WKRTCFloatingCallView : UIControl
 
@@ -239,6 +240,10 @@ static NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFin
     }
     [self postChannelCallChangeWithCommand:cmd payload:payload];
     if([cmd isEqualToString:WKRTCCMDInvite]) {
+        if([UIApplication sharedApplication].applicationState != UIApplicationStateActive) {
+            [[NSNotificationCenter defaultCenter] postNotificationName:WKRTCSessionDidReceiveBackgroundInviteNotification object:self userInfo:@{@"rtc_call": param}];
+            return;
+        }
         [self receiveIncomingPayload:payload completion:nil];
     }else if([cmd isEqualToString:WKRTCCMDNotice]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:WKRTCNoticeDidReceiveNotification object:payload userInfo:[payload toDictionary]];
