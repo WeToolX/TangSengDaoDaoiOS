@@ -15,6 +15,7 @@
 
 #import "SELUpdateAlert.h"
 #import <PushKit/PushKit.h>
+#import <UserNotifications/UserNotifications.h>
 #import <WuKongBase/WKRTCAPI.h>
 #import <WuKongBase/WKRTCSessionManager.h>
 #import <WuKongBase/WKRTCMediaAdapter.h>
@@ -43,6 +44,9 @@
 
 // 举报地址
 #define REPORT_URL  [NSString stringWithFormat:@"%@://%@/web/report.html",HTTPS_ON?@"https":@"http",SERVER_IP]
+
+
+static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
 
 
 
@@ -91,9 +95,10 @@
         WKMainTabController *homeViewController =  [WKMainTabController new];
         return homeViewController;
     };
-
    
+
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCBackgroundInvite:) name:@"WKRTCSessionDidReceiveBackgroundInviteNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCSessionDidFinish:) name:WKRTCSessionDidFinishNotification object:nil];
     // app初始化
     [[WKApp shared] appInit];
     [self registerVoIPPush];
@@ -116,7 +121,8 @@
     }
     dispatch_async(dispatch_get_main_queue(), ^{
         if(![[WKRTCLiveCommunicationKitBridge shared] isSupported]) {
-            WKLogWarn(@"当前系统不支持 LiveCommunicationKit，后台在线来电等待普通 APNs 提醒");
+            WKLogWarn(@"当前系统不支持 LiveCommunicationKit，后台在线来电改用本地通知提醒");
+            [self showRTCIncomingLocalNotification:payload];
             return;
         }
         [[WKRTCLiveCommunicationKitBridge shared] reportIncomingPushPayload:payload completion:^(BOOL handled) {
@@ -125,6 +131,74 @@
             }
         }];
     });
+}
+
+- (void)handleRTCSessionDidFinish:(NSNotification *)notification {
+    NSString *callId = notification.userInfo[@"call_id"];
+    if(![callId isKindOfClass:NSString.class] || callId.length == 0) {
+        return;
+    }
+    [self removeRTCIncomingLocalNotificationWithCallId:callId];
+}
+
+- (void)showRTCIncomingLocalNotification:(NSDictionary *)payload {
+    NSDictionary *rtcCall = [payload[@"rtc_call"] isKindOfClass:NSDictionary.class] ? payload[@"rtc_call"] : payload;
+    if(![rtcCall isKindOfClass:NSDictionary.class]) {
+        return;
+    }
+    NSString *callId = [rtcCall[@"call_id"] isKindOfClass:NSString.class] ? rtcCall[@"call_id"] : @"";
+    if(callId.length == 0) {
+        return;
+    }
+    NSString *callType = [rtcCall[@"call_type"] isKindOfClass:NSString.class] ? rtcCall[@"call_type"] : @"audio";
+    NSString *fromName = [rtcCall[@"from_name"] isKindOfClass:NSString.class] ? rtcCall[@"from_name"] : @"";
+    if(fromName.length == 0) {
+        fromName = @"卿航IM";
+    }
+    NSString *body = [callType isEqualToString:@"video"] ? @"邀请你进行视频通话" : @"邀请你进行语音通话";
+    NSString *identifier = [self rtcIncomingLocalNotificationIdentifier:callId];
+    if (@available(iOS 10.0, *)) {
+        UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
+        content.title = fromName;
+        content.body = body;
+        content.sound = [UNNotificationSound defaultSound];
+        content.userInfo = @{@"rtc_call": rtcCall};
+        UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:identifier content:content trigger:nil];
+        [[UNUserNotificationCenter currentNotificationCenter] addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
+            if(error) {
+                WKLogError(@"音视频本地来电通知失败！-> %@", error);
+            }else {
+                WKLogDebug(@"音视频本地来电通知已提交，通话编号：%@", callId);
+            }
+        }];
+    } else {
+        UILocalNotification *localNotification = [[UILocalNotification alloc] init];
+        localNotification.alertTitle = fromName;
+        localNotification.alertBody = body;
+        localNotification.soundName = UILocalNotificationDefaultSoundName;
+        localNotification.userInfo = @{@"call_id": callId};
+        [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
+    }
+}
+
+- (void)removeRTCIncomingLocalNotificationWithCallId:(NSString *)callId {
+    NSString *identifier = [self rtcIncomingLocalNotificationIdentifier:callId];
+    if (@available(iOS 10.0, *)) {
+        UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+        [center removePendingNotificationRequestsWithIdentifiers:@[identifier]];
+        [center removeDeliveredNotificationsWithIdentifiers:@[identifier]];
+    }else {
+        NSArray<UILocalNotification *> *notifications = [UIApplication sharedApplication].scheduledLocalNotifications;
+        for (UILocalNotification *notification in notifications) {
+            if([notification.userInfo[@"call_id"] isEqualToString:callId]) {
+                [[UIApplication sharedApplication] cancelLocalNotification:notification];
+            }
+        }
+    }
+}
+
+- (NSString *)rtcIncomingLocalNotificationIdentifier:(NSString *)callId {
+    return [WKRTCIncomingLocalNotificationPrefix stringByAppendingString:callId ?: @""];
 }
 
 -(void) applicationWillEnterForeground:(UIApplication *)application {

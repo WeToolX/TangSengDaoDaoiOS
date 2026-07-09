@@ -233,12 +233,16 @@ NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNoti
     WKRTCCallPayload *payload = [WKRTCCallPayload modelWithDictionary:param];
     WKLogDebug(@"音视频收到即时消息命令：%@，通话编号：%@", cmd, payload.callId);
     BOOL ignoredCancel = [cmd isEqualToString:WKRTCCMDCancelled] && [self shouldIgnoreCancelPayload:payload];
+    BOOL detachedEndCommand = [self isEndCommand:cmd] && !ignoredCancel && ![self isCurrentCall:payload.callId];
     if([self isEndCommand:cmd] && !ignoredCancel) {
         [self markCallEnded:payload.callId];
     }else if([cmd isEqualToString:WKRTCCMDInvite] || [cmd isEqualToString:WKRTCCMDNotice] || [cmd isEqualToString:WKRTCCMDJoined]) {
         [self clearEndedCallId:payload.callId];
     }
     [self postChannelCallChangeWithCommand:cmd payload:payload];
+    if(detachedEndCommand) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:WKRTCSessionDidFinishNotification object:self userInfo:@{@"call_id": payload.callId ?: @"", @"reason": payload.reason ?: @""}];
+    }
     if([cmd isEqualToString:WKRTCCMDInvite]) {
         if([UIApplication sharedApplication].applicationState != UIApplicationStateActive) {
             [[NSNotificationCenter defaultCenter] postNotificationName:WKRTCSessionDidReceiveBackgroundInviteNotification object:self userInfo:@{@"rtc_call": param}];
