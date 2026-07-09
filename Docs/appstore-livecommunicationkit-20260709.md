@@ -42,6 +42,8 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - App Store-oriented build succeeds from `TangSengDaoDaoiOS.xcworkspace` with scheme `WuKongChatiOS`.
 - iOS 17.4+ incoming VoIP push reports a LiveCommunicationKit conversation before RTC UI presentation.
 - LiveCommunicationKit answer action keeps the in-app RTC page in incoming/joining/connecting flow until join succeeds or fails.
+- While a LiveCommunicationKit call is ringing, manually opening the app presents the existing in-app RTC incoming page without requiring the system answer button.
+- Accepting or ending the call from the app clears the active LiveCommunicationKit system conversation.
 - iOS below 17.4 does not use PushKit as a naked call wake-up path.
 - Foreground RTC invite still opens `WKRTCCallViewController`.
 - Background or lock-screen RTC invite received over the IM socket reports to LiveCommunicationKit instead of using the app-side incoming-call page/ringtone path.
@@ -79,3 +81,6 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - Runtime review on 2026-07-09 showed LiveCommunicationKit answer action could time out while waiting for the full app-side RTC join and media connection, causing the opened RTC page to close after a short delay.
 - Follow-up fix fulfills the LiveCommunicationKit join action immediately, then lets the existing app-side RTC join flow continue.
 - Follow-up Release generic iOS build for immediate LiveCommunicationKit join-action fulfillment passed on 2026-07-09.
+- Runtime review on 2026-07-09 showed LiveCommunicationKit ringing calls were not persisted into the pending app-open path, so manually opening the app did not show the in-app RTC incoming page.
+- Follow-up plan persists LCK payloads for app-open routing and lets accepted/finished RTC session notifications clear the LCK system conversation.
+- Follow-up Release generic iOS build for LCK pending app-open routing and LCK cleanup on RTC accept/finish passed on 2026-07-09.

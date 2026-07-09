@@ -22,6 +22,7 @@ static NSString * const WKRTCCMDClosed = @"rtc.closed";
 static NSString * const WKRTCCMDTimeout = @"rtc.timeout";
 static NSString * const WKRTCPictureInPictureRestoreRequestedNotification = @"WKRTCPictureInPictureRestoreRequested";
 NSString * const WKRTCSessionDidReceiveBackgroundInviteNotification = @"WKRTCSessionDidReceiveBackgroundInviteNotification";
+NSString * const WKRTCSessionDidAcceptNotification = @"WKRTCSessionDidAcceptNotification";
 NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNotification";
 
 @interface WKRTCFloatingCallView : UIControl
@@ -342,6 +343,7 @@ NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNoti
         return;
     }
     WKRTCCallPayload *payload = self.currentPayload;
+    [[NSNotificationCenter defaultCenter] postNotificationName:WKRTCSessionDidAcceptNotification object:self userInfo:@{@"call_id": payload.callId ?: @""}];
     [self presentCallViewControllerIfNeeded];
     [self requestPermissionForCallType:payload.callType completion:^(BOOL granted) {
         if(!granted) {

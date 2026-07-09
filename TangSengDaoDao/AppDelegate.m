@@ -100,6 +100,7 @@ static NSString * const WKRTCIncomingNotificationSoundName = @"rtc_ring.mp3";
    
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCBackgroundInvite:) name:@"WKRTCSessionDidReceiveBackgroundInviteNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCSessionDidAccept:) name:@"WKRTCSessionDidAcceptNotification" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCSessionDidFinish:) name:@"WKRTCSessionDidFinishNotification" object:nil];
     if (@available(iOS 10.0, *)) {
         [UNUserNotificationCenter currentNotificationCenter].delegate = self;
@@ -131,12 +132,22 @@ static NSString * const WKRTCIncomingNotificationSoundName = @"rtc_ring.mp3";
             [self showRTCIncomingLocalNotification:payload];
             return;
         }
+        [self savePendingRTCInvitePayload:payload];
         [[WKRTCLiveCommunicationKitBridge shared] reportIncomingPushPayload:payload completion:^(BOOL handled) {
             if(!handled) {
                 WKLogWarn(@"LiveCommunicationKit 上报后台在线来电失败");
             }
         }];
     });
+}
+
+- (void)handleRTCSessionDidAccept:(NSNotification *)notification {
+    NSString *callId = notification.userInfo[@"call_id"];
+    if(![callId isKindOfClass:NSString.class] || callId.length == 0) {
+        return;
+    }
+    [self clearPendingRTCInviteWithCallId:callId];
+    [self removeRTCIncomingLocalNotificationWithCallId:callId];
 }
 
 - (void)handleRTCSessionDidFinish:(NSNotification *)notification {
@@ -444,6 +455,7 @@ withCompletionHandler:(void (^)(void))completion {
         if(completion) completion();
         return;
     }
+    [self savePendingRTCInvitePayload:payload.dictionaryPayload];
     [[WKRTCLiveCommunicationKitBridge shared] reportIncomingPushPayload:payload.dictionaryPayload completion:^(BOOL handled) {
         if(!handled) {
             WKLogWarn(@"LiveCommunicationKit 上报来电失败");

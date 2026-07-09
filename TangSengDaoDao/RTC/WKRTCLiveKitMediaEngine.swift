@@ -846,6 +846,12 @@ private final class WKRTCLiveCommunicationCoordinator: NSObject, ConversationMan
             name: Notification.Name("WKRTCSessionDidFinishNotification"),
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(rtcSessionDidAccept(_:)),
+            name: Notification.Name("WKRTCSessionDidAcceptNotification"),
+            object: nil
+        )
     }
 
     deinit {
@@ -952,6 +958,14 @@ private final class WKRTCLiveCommunicationCoordinator: NSObject, ConversationMan
     }
 
     @objc private func rtcSessionDidFinish(_ notification: Notification) {
+        endSystemConversation(from: notification)
+    }
+
+    @objc private func rtcSessionDidAccept(_ notification: Notification) {
+        endSystemConversation(from: notification)
+    }
+
+    private func endSystemConversation(from notification: Notification) {
         guard let callId = notification.userInfo?["call_id"] as? String,
               let uuid = uuidByCallId[callId],
               let conversation = manager.conversations.first(where: { $0.uuid == uuid }) else {
