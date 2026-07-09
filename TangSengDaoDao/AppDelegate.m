@@ -51,7 +51,7 @@ static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
 
 
 
-@interface AppDelegate ()<UITabBarControllerDelegate, PKPushRegistryDelegate>
+@interface AppDelegate ()<UITabBarControllerDelegate, PKPushRegistryDelegate, UNUserNotificationCenterDelegate>
 
 @property(nonatomic,strong) WKConversationListVC *conversationList;
 //@property(nonatomic,strong)  WKContactsVC *contactVC;
@@ -99,6 +99,9 @@ static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCBackgroundInvite:) name:@"WKRTCSessionDidReceiveBackgroundInviteNotification" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleRTCSessionDidFinish:) name:WKRTCSessionDidFinishNotification object:nil];
+    if (@available(iOS 10.0, *)) {
+        [UNUserNotificationCenter currentNotificationCenter].delegate = self;
+    }
     // app初始化
     [[WKApp shared] appInit];
     [self registerVoIPPush];
@@ -199,6 +202,25 @@ static NSString * const WKRTCIncomingLocalNotificationPrefix = @"rtc_incoming_";
 
 - (NSString *)rtcIncomingLocalNotificationIdentifier:(NSString *)callId {
     return [WKRTCIncomingLocalNotificationPrefix stringByAppendingString:callId ?: @""];
+}
+
+- (void)openRTCInviteFromNotificationUserInfo:(NSDictionary *)userInfo completion:(void (^)(void))completion {
+    if([userInfo[@"rtc_call"] isKindOfClass:NSDictionary.class] || [userInfo[@"call_id"] isKindOfClass:NSString.class]) {
+        WKLogDebug(@"音视频点击来电通知，准备打开接听页");
+        [[WKRTCSessionManager shared] handleRemotePayload:userInfo completion:completion];
+        return;
+    }
+    if(completion) completion();
+}
+
+- (void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification {
+    [self openRTCInviteFromNotificationUserInfo:notification.userInfo completion:nil];
+}
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+didReceiveNotificationResponse:(UNNotificationResponse *)response
+         withCompletionHandler:(void (^)(void))completionHandler API_AVAILABLE(ios(10.0)) {
+    [self openRTCInviteFromNotificationUserInfo:response.notification.request.content.userInfo completion:completionHandler];
 }
 
 -(void) applicationWillEnterForeground:(UIApplication *)application {

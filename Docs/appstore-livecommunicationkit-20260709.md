@@ -45,6 +45,7 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - Foreground RTC invite still opens `WKRTCCallViewController`.
 - Background or lock-screen RTC invite received over the IM socket reports to LiveCommunicationKit instead of using the app-side incoming-call page/ringtone path.
 - Normal APNs chat notifications still work.
+- iOS below 17.4 local/normal APNs call notifications open the existing RTC incoming-call page after the user taps the notification.
 
 ## Progress
 
@@ -62,3 +63,5 @@ The app must not restore CallKit. Incoming audio/video calls should use PushKit 
 - Release app binary links `PushKit.framework` and weak-links `LiveCommunicationKit.framework`; it does not link `CallKit.framework`.
 - Runtime log review on 2026-07-09 showed background/lock-screen `rtc.invite` was arriving over the IM socket, not PushKit. Follow-up fix routes that path through LiveCommunicationKit as well.
 - Follow-up Debug and Release generic iOS builds for the background IM invite path passed on 2026-07-09.
+- Runtime log review on 2026-07-09 showed unsupported-LCK devices created the local incoming-call notification, but notification tap was not routed back to `WKRTCSessionManager`.
+- Follow-up Release generic iOS build for notification tap routing passed on 2026-07-09.
