@@ -686,7 +686,7 @@ static NSString * const WKChatBackgroundDefaultKey = @"wk_default";
     
    
     
-    [[WKApp shared] setMethod:@"channelsetting.report" handler:^id _Nullable(id  _Nonnull param) {
+    [[WKApp shared] setMethod:@"channelsetting.blacklist" handler:^id _Nullable(id  _Nonnull param) {
         WKChannel *channel = param[@"channel"];
         if(channel.channelType != WK_PERSON) {
             return nil;
@@ -709,7 +709,7 @@ static NSString * const WKChatBackgroundDefaultKey = @"wk_default";
                ]
 
         };
-    } category:WKPOINT_CATEGORY_CHANNELSETTING sort:88800];
+    } category:WKPOINT_CATEGORY_CHANNELSETTING sort:88850];
     
     [[WKApp shared] setMethod:@"channelsetting.report" handler:^id _Nullable(id  _Nonnull param) {
         WKChannel *channel = param[@"channel"];
