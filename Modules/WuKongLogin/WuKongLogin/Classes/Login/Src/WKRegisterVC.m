@@ -61,7 +61,9 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
 @property(nonatomic,strong) UILabel *loginTipLbl; // 登录提示
 @property(nonatomic,strong) UIButton *toLoginBtn; // 去登录
 
+@property(nonatomic,strong) UIButton *agreementBtn; // 协议勾选
 @property(nonatomic,strong) M80AttributedLabel *privacyLbl; // 隐私条款
+@property(nonatomic,assign) BOOL agreementChecked; // 是否已同意协议
 
 @end
 
@@ -111,6 +113,7 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
     [self.view addSubview:self.loginTipLbl];
     [self.view addSubview:self.toLoginBtn];
     
+    [self.view addSubview:self.agreementBtn];
     [self.view addSubview:self.privacyLbl];
     
 }
@@ -373,6 +376,21 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
     return _toLoginBtn;
 }
 
+- (UIButton *)agreementBtn {
+    if(!_agreementBtn) {
+        CGFloat top = self.inviteCodeBoxView.lim_bottom + 51.0f;
+        _agreementBtn = [[UIButton alloc] initWithFrame:CGRectMake(30.0f, top, 18.0f, 18.0f)];
+        _agreementBtn.layer.borderWidth = 1.0f;
+        _agreementBtn.layer.cornerRadius = 3.0f;
+        _agreementBtn.layer.borderColor = [WKApp shared].config.tipColor.CGColor;
+        [_agreementBtn setTitle:@"✓" forState:UIControlStateSelected];
+        [_agreementBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
+        _agreementBtn.titleLabel.font = [UIFont systemFontOfSize:14.0f weight:UIFontWeightSemibold];
+        [_agreementBtn addTarget:self action:@selector(agreementPressed:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _agreementBtn;
+}
+
 #pragma mark - 事件
 // 跳到注册页面
 -(void) toLoginPressed{
@@ -384,6 +402,14 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
     btn.selected = !btn.selected;
     _passwordTextField.secureTextEntry = !btn.selected;
 }
+
+-(void) agreementPressed:(UIButton*)btn {
+    self.agreementChecked = !self.agreementChecked;
+    btn.selected = self.agreementChecked;
+    btn.backgroundColor = self.agreementChecked ? [WKApp shared].config.themeColor : [UIColor clearColor];
+    btn.layer.borderColor = (self.agreementChecked ? [WKApp shared].config.themeColor : [WKApp shared].config.tipColor).CGColor;
+}
+
 // 国家点击
 -(void) countryBtnPressed {
     WKCountrySelectVC *vc = [WKCountrySelectVC new];
@@ -476,6 +502,10 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
     NSString *phone = self.mobileTextField.text;
     NSString *password = self.passwordTextField.text;
     NSString *inviteCode = [[self.inviteCodeTextField.text ?: @"" stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
+    if(!self.agreementChecked) {
+        [self.view showHUDWithHide:LLang(@"请先阅读并同意用户协议和隐私政策")];
+        return;
+    }
     if(WKApp.shared.remoteConfig.registerInviteOn && inviteCode.length == 0) {
         [self.view showHUDWithHide:LLang(@"邀请码不能为空")];
         return;
@@ -503,27 +533,26 @@ static int lastGetCodeTimestamp = 0; // 最后一次获取验证码的时间戳�
 
 - (M80AttributedLabel *)privacyLbl {
     if(!_privacyLbl) {
-        CGFloat bottom = 0.0f;
-        if (@available(iOS 11.0, *)) {
-             bottom = [UIApplication sharedApplication].keyWindow.safeAreaInsets.bottom;
-        }
         _privacyLbl = [[M80AttributedLabel alloc] init];
         _privacyLbl.delegate = self;
         _privacyLbl.backgroundColor = [UIColor clearColor];
         [_privacyLbl setFont:[UIFont systemFontOfSize:12.0f]];
         [_privacyLbl setTextColor:[WKApp shared].config.tipColor];
-        [_privacyLbl appendText:LLang(@"点击“注册”即表示已阅读并同意")];
+        [_privacyLbl appendText:LLang(@"我已阅读并同意")];
+        [_privacyLbl appendText:@" "];
         NSString *uPTxt = LLang(@"用户协议");
         [_privacyLbl addCustomLink:[WKApp shared].config.userAgreementUrl forRange:NSMakeRange(_privacyLbl.text.length, uPTxt.length)];
         [_privacyLbl appendText:uPTxt];
-        [_privacyLbl appendText:@"、"];
+        [_privacyLbl appendText:@" "];
+        [_privacyLbl appendText:LLang(@"和")];
+        [_privacyLbl appendText:@" "];
         NSString *pPTxt = LLang(@"隐私政策");
         [_privacyLbl addCustomLink:[WKApp shared].config.privacyAgreementUrl forRange:NSMakeRange(_privacyLbl.text.length, pPTxt.length)];
         [_privacyLbl appendText:pPTxt];
         
         [_privacyLbl sizeToFit];
-        _privacyLbl.lim_centerX_parent = self.view;
-        _privacyLbl.lim_top = WKScreenHeight - ( bottom + 30.0f);
+        _privacyLbl.lim_left = self.agreementBtn.lim_right + 8.0f;
+        _privacyLbl.lim_top = self.agreementBtn.lim_top + 1.0f;
     }
     return _privacyLbl;
 }

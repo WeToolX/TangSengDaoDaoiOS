@@ -14,7 +14,8 @@
 #import "WKRegisterVC.h"
 #import "WKForgetPasswordVC.h"
 #import "WKAuthWebViewVC.h"
-@interface WKLoginView() <UITextFieldDelegate> {
+#import <M80AttributedLabel/M80AttributedLabel.h>
+@interface WKLoginView() <UITextFieldDelegate,M80AttributedLabelDelegate> {
 }
 
 @property(nonatomic,strong) UIImageView *bgImgView; // 背景图
@@ -39,6 +40,9 @@
 @property(nonatomic,strong) UIButton *loginBtn; // 登录按钮
 @property(nonatomic,strong) UILabel *registerTipLbl; // 注册提示
 @property(nonatomic,strong) UIButton *registerBtn; // 注册
+@property(nonatomic,strong) UIButton *agreementBtn; // 协议勾选
+@property(nonatomic,strong) M80AttributedLabel *privacyLbl; // 协议条款
+@property(nonatomic,assign) BOOL agreementChecked; // 是否已同意协议
 
 
 @end
@@ -68,6 +72,8 @@
     [self.passwordBoxView addSubview:self.eyeBtn];
     
     [self addSubview:self.forgetPwdBtn];
+    [self addSubview:self.agreementBtn];
+    [self addSubview:self.privacyLbl];
     [self addSubview:self.loginBtn];
     [self addSubview:self.registerTipLbl];
     [self addSubview:self.registerBtn];
@@ -225,6 +231,46 @@
     [[WKNavigationManager shared] pushViewController:vc animated:YES];
 }
 
+// 协议勾选
+- (UIButton *)agreementBtn {
+    if(!_agreementBtn) {
+        _agreementBtn = [[UIButton alloc] initWithFrame:CGRectMake(30.0f, self.passwordBoxView.lim_bottom + 51.0f, 18.0f, 18.0f)];
+        _agreementBtn.layer.borderWidth = 1.0f;
+        _agreementBtn.layer.cornerRadius = 3.0f;
+        _agreementBtn.layer.borderColor = [WKApp shared].config.tipColor.CGColor;
+        [_agreementBtn setTitle:@"✓" forState:UIControlStateSelected];
+        [_agreementBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
+        _agreementBtn.titleLabel.font = [UIFont systemFontOfSize:14.0f weight:UIFontWeightSemibold];
+        [_agreementBtn addTarget:self action:@selector(agreementPressed:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _agreementBtn;
+}
+
+- (M80AttributedLabel *)privacyLbl {
+    if(!_privacyLbl) {
+        _privacyLbl = [[M80AttributedLabel alloc] init];
+        _privacyLbl.delegate = self;
+        _privacyLbl.backgroundColor = [UIColor clearColor];
+        [_privacyLbl setFont:[UIFont systemFontOfSize:12.0f]];
+        [_privacyLbl setTextColor:[WKApp shared].config.tipColor];
+        [_privacyLbl appendText:LLang(@"我已阅读并同意")];
+        [_privacyLbl appendText:@" "];
+        NSString *uPTxt = LLang(@"用户协议");
+        [_privacyLbl addCustomLink:[WKApp shared].config.userAgreementUrl forRange:NSMakeRange(_privacyLbl.text.length, uPTxt.length)];
+        [_privacyLbl appendText:uPTxt];
+        [_privacyLbl appendText:@" "];
+        [_privacyLbl appendText:LLang(@"和")];
+        [_privacyLbl appendText:@" "];
+        NSString *pPTxt = LLang(@"隐私政策");
+        [_privacyLbl addCustomLink:[WKApp shared].config.privacyAgreementUrl forRange:NSMakeRange(_privacyLbl.text.length, pPTxt.length)];
+        [_privacyLbl appendText:pPTxt];
+        [_privacyLbl sizeToFit];
+        _privacyLbl.lim_left = self.agreementBtn.lim_right + 8.0f;
+        _privacyLbl.lim_top = self.agreementBtn.lim_top + 1.0f;
+    }
+    return _privacyLbl;
+}
+
 // 登录
 - (UIButton *)loginBtn {
     if(!_loginBtn) {
@@ -292,6 +338,14 @@
     btn.selected = !btn.selected;
     _passwordTextField.secureTextEntry = !btn.selected;
 }
+
+-(void) agreementPressed:(UIButton*)btn {
+    self.agreementChecked = !self.agreementChecked;
+    btn.selected = self.agreementChecked;
+    btn.backgroundColor = self.agreementChecked ? [WKApp shared].config.themeColor : [UIColor clearColor];
+    btn.layer.borderColor = (self.agreementChecked ? [WKApp shared].config.themeColor : [WKApp shared].config.tipColor).CGColor;
+}
+
 // 国家点击
 -(void) countryBtnPressed {
     WKCountrySelectVC *vc = [WKCountrySelectVC new];
@@ -310,9 +364,19 @@
 
 // 登录按钮点击
 -(void) loginBtnPressed{
+    if(!self.agreementChecked) {
+        [self showHUDWithHide:LLang(@"请先阅读并同意用户协议和隐私政策")];
+        return;
+    }
     if(self.onLogin) {
         self.onLogin(self.mobileTextField.text,self.passwordTextField.text,[NSString stringWithFormat:@"00%@",_country]);
     }
+}
+
+- (void)m80AttributedLabel:(M80AttributedLabel *)label clickedOnLink:(id)linkData {
+    WKWebViewVC *vc = [WKWebViewVC new];
+    vc.url = [NSURL URLWithString:linkData];
+    [[WKNavigationManager shared] pushViewController:vc animated:YES];
 }
 
 -(void) giteeLoginPressed {
@@ -373,6 +437,8 @@
     self.passwordBottomLineView.layer.backgroundColor = [WKApp shared].config.lineColor.CGColor;
     self.countrySpliteLineView.layer.backgroundColor = [WKApp shared].config.lineColor.CGColor;
     self.mobileBottomLineView.layer.backgroundColor = [WKApp shared].config.lineColor.CGColor;
+    self.agreementBtn.layer.borderColor = (self.agreementChecked ? [WKApp shared].config.themeColor : [WKApp shared].config.tipColor).CGColor;
+    self.agreementBtn.backgroundColor = self.agreementChecked ? [WKApp shared].config.themeColor : [UIColor clearColor];
 }
 
 
