@@ -465,6 +465,14 @@
 
 @implementation WKAppRemoteConfig
 
+- (instancetype)init {
+    self = [super init];
+    if(self) {
+        _globalScreenshotOn = YES;
+    }
+    return self;
+}
+
 -(void) requestConfig:(void(^)(NSError  * __nullable error))callback {
     
     __weak typeof(self) weakSelf = self;
@@ -494,6 +502,12 @@
             if(resultDict[@"register_user_must_complete_info_on"]) {
                 weakSelf.registerUserMustCompleteInfoOn = [resultDict[@"register_user_must_complete_info_on"] boolValue];
             }
+            if(resultDict[@"global_screenshot_on"] != nil) {
+                weakSelf.globalScreenshotOn = [resultDict[@"global_screenshot_on"] integerValue] == 1;
+            }
+            weakSelf.contactWecomQRCode = resultDict[@"contact_wecom_qrcode"] ?: @"";
+            weakSelf.contactEmail = resultDict[@"contact_email"] ?: @"";
+            [[WKApp shared] updateScreenshotProtection];
            
             
             weakSelf.requestSuccess = true;

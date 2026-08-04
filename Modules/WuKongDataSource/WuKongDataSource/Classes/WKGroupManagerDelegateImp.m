@@ -166,6 +166,8 @@
     [channelInfo setSettingValue:groupModel.revokeRemind forKey:WKChannelExtraKeyRevokeRemind];
     [channelInfo setSettingValue:groupModel.chatPwdOn forKey:WKChannelExtraKeyChatPwd];
     [channelInfo setSettingValue:groupModel.allowViewHistoryMsg forKey:WKChannelExtraKeyAllowViewHistoryMsg];
+    channelInfo.extra[@"audio_call_enabled"] = @(groupModel.audioCallEnabled);
+    channelInfo.extra[@"video_call_enabled"] = @(groupModel.videoCallEnabled);
     
     [[WKSDK shared].channelManager addOrUpdateChannelInfo:channelInfo];
 }

@@ -146,6 +146,8 @@ NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNoti
 @property(nonatomic,strong) WKRTCFloatingCallView *floatingCallView;
 @property(nonatomic,strong) NSMutableSet<NSString *> *endedCallIds;
 
+- (BOOL)canUseGroupRTCWithChannel:(WKChannel *)channel;
+
 @end
 
 @implementation WKRTCSessionManager
@@ -184,6 +186,10 @@ NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNoti
     }
     if(self.state != WKRTCCallStateIdle && self.state != WKRTCCallStateEnded && self.state != WKRTCCallStateFailed) {
         [self showToast:@"当前已有通话"];
+        return;
+    }
+    if(![self canUseGroupRTCWithChannel:channel]) {
+        [self showToast:@"禁言中，无法发起通话"];
         return;
     }
     [self requestPermissionForCallType:callType completion:^(BOOL granted) {
@@ -343,6 +349,13 @@ NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNoti
         return;
     }
     WKRTCCallPayload *payload = self.currentPayload;
+    WKChannel *channel = [[WKChannel alloc] initWith:payload.channelId channelType:payload.channelType];
+    if(![self canUseGroupRTCWithChannel:channel]) {
+        NSError *error = WKRTCError(-1, @"禁言中，无法加入通话");
+        if(completion) completion(error);
+        [self rejectIncomingCall];
+        return;
+    }
     [[NSNotificationCenter defaultCenter] postNotificationName:WKRTCSessionDidAcceptNotification object:self userInfo:@{@"call_id": payload.callId ?: @""}];
     [self presentCallViewControllerIfNeeded];
     [self requestPermissionForCallType:payload.callType completion:^(BOOL granted) {
@@ -381,6 +394,13 @@ NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNoti
     if(payload.callId.length == 0) {
         NSError *error = WKRTCError(-1, @"通话编号不能为空");
         if(completion) completion(error);
+        return;
+    }
+    WKChannel *channel = [[WKChannel alloc] initWith:payload.channelId channelType:payload.channelType];
+    if(![self canUseGroupRTCWithChannel:channel]) {
+        NSError *error = WKRTCError(-1, @"禁言中，无法加入通话");
+        if(completion) completion(error);
+        [self showToast:error.localizedDescription];
         return;
     }
     if(self.state != WKRTCCallStateIdle && self.state != WKRTCCallStateEnded && self.state != WKRTCCallStateFailed) {
@@ -431,6 +451,22 @@ NSString * const WKRTCSessionDidFinishNotification = @"WKRTCSessionDidFinishNoti
             if(completion) completion(safeError);
         });
     }];
+}
+
+- (BOOL)canUseGroupRTCWithChannel:(WKChannel *)channel {
+    if(channel.channelType != WK_GROUP) {
+        return YES;
+    }
+    WKChannelInfo *channelInfo = [[WKSDK shared].channelManager getChannelInfo:channel];
+    WKChannelMember *member = [[WKSDK shared].channelManager getMember:channel uid:WKApp.shared.loginInfo.uid];
+    if(!channelInfo || !member) {
+        return YES;
+    }
+    if(member.role == WKMemberRoleCreator || member.role == WKMemberRoleManager) {
+        return YES;
+    }
+    NSInteger forbiddenExpireTime = [member.extra[@"forbidden_expir_time"] integerValue];
+    return !channelInfo.forbidden && forbiddenExpireTime <= [[NSDate date] timeIntervalSince1970];
 }
 
 - (void)rejectIncomingCall {

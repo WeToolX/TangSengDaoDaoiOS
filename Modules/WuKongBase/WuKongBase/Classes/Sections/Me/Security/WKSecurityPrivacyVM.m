@@ -13,8 +13,6 @@
 #import "WKBlacklistVC.h"
 #import "WKMySettingManager.h"
 
-static NSString * const WKDisableScreenshotKey = @"security.disable_screenshot";
-
 @implementation WKSecurityPrivacyVM
 
 - (void)requestData:(void (^)(NSError * _Nullable))complete {
@@ -31,7 +29,6 @@ static NSString * const WKDisableScreenshotKey = @"security.disable_screenshot";
 
 - (NSArray<NSDictionary *> *)tableSectionMaps {
     __weak typeof(self) weakSelf = self;
-    BOOL disableScreenshot = [[NSUserDefaults standardUserDefaults] boolForKey:WKDisableScreenshotKey];
     NSString *lockScreenPwd = [WKApp shared].loginInfo.extra[@"lock_screen_pwd"];
     NSString *deviceLockDesc = [WKMySettingManager shared].deviceLock ? LLang(@"已开启") : LLang(@"已关闭");
     return @[
@@ -84,7 +81,6 @@ static NSString * const WKDisableScreenshotKey = @"security.disable_screenshot";
         @{
             @"height":@(15.0f),
             @"title":LLang(@"屏幕保护"),
-            @"remark":LLang(@"开启后，系统截屏或录屏时将显示空白内容"),
             @"items":@[
                 @{
                     @"class":WKLabelItemModel.class,
@@ -108,16 +104,6 @@ static NSString * const WKDisableScreenshotKey = @"security.disable_screenshot";
                     @"on":@([WKMySettingManager shared].offlineProtection),
                     @"onSwitch":^(BOOL on) {
                         [weakSelf updateSetting:[[WKMySettingManager shared] offlineProtection:on]];
-                    }
-                },
-                @{
-                    @"class":WKSwitchItemModel.class,
-                    @"label":LLang(@"禁止截屏"),
-                    @"on":@(disableScreenshot),
-                    @"onSwitch":^(BOOL on) {
-                        [[NSUserDefaults standardUserDefaults] setBool:on forKey:WKDisableScreenshotKey];
-                        [[NSUserDefaults standardUserDefaults] synchronize];
-                        [[WKApp shared] updateScreenshotProtection];
                     }
                 },
             ],

@@ -175,36 +175,7 @@
     
     // 邀请信息
     [[WKApp shared] setMethod:@"user.info.inviteInfo" handler:^id _Nullable(id  _Nonnull param) {
-        NSString *uid = param[@"uid"];
-        if([uid isEqualToString:[WKApp shared].loginInfo.uid]) {
-            return nil;
-        }
-        WKChannelMember *memberOfUser = param[@"memberOfUser"];
-        if(!memberOfUser) {
-            return nil;
-        }
-        if(!memberOfUser.extra[@"invite_uid"] || [memberOfUser.extra[@"invite_uid"] isEqualToString:@""]) {
-            return nil;
-        }
-        NSString *createdAt = memberOfUser.createdAt;
-        if(createdAt.length>10) {
-            createdAt = [createdAt substringToIndex:10];
-        }
-        WKChannelMember *memberOfInvite = [[WKSDK shared].channelManager getMember:weakSelf.fromChannel uid:memberOfUser.extra[@"invite_uid"]];
-        if(!memberOfInvite) {
-            return nil;
-        }
-        return  @{
-            @"height":@(0.0f),
-            @"items":@[
-                    @{
-                        @"class":WKLabelItemModel.class,
-                        @"label":LLangW(@"进群方式",weakSelf),
-                        @"valueFont": [[WKApp shared].config appFontOfSize:12.0f],
-                        @"value": [NSString stringWithFormat:@"%@ %@邀请入群",createdAt,memberOfInvite.displayName],
-                    },
-            ],
-        };
+        return nil;
     } category:WKPOINT_CATEGORY_USER_INFO_ITEM sort:3999];
     
     // 个人禁言

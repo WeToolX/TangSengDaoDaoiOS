@@ -29,6 +29,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic,assign) BOOL invite; // 群聊邀请确认
 @property(nonatomic,assign) BOOL chatPwdOn; // 聊天密码开关
 @property(nonatomic,assign) BOOL allowViewHistoryMsg; //允许新成员查看历史消息
+@property(nonatomic,assign) BOOL audioCallEnabled; // 是否允许群语音通话
+@property(nonatomic,assign) BOOL videoCallEnabled; // 是否允许群视频通话
 @property(nonatomic,assign) long version; // 群版本号
 @end
 

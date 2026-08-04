@@ -104,8 +104,6 @@
 //#import <PINRemoteImage/PINRemoteImageCaching.h>
 typedef void(^WKOnComplete)(id data,NSError *error);
 
-static NSString * const WKDisableScreenshotKey = @"security.disable_screenshot";
-
 
 
 @interface WKApp ()<WKNetworkListenerDelegate,WKConnectionManagerDelegate>
@@ -486,7 +484,7 @@ static WKApp *_instance;
 
 -(void) updateScreenshotProtection {
     dispatch_async(dispatch_get_main_queue(), ^{
-        BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:WKDisableScreenshotKey];
+        BOOL enabled = !self.remoteConfig.globalScreenshotOn;
         [self setScreenshotProtectionEnabled:enabled];
     });
 }
@@ -747,6 +745,9 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
 
 -(void) appWillEnterForeground:(NSNotification*) notification {
     WKLogDebug(@"appWillEnterForeground--->");
+    if([self isLogined]) {
+        [self.remoteConfig forceRequestAppConfig:nil];
+    }
     [self showLockScreenProtectIfNeed];
     
     [self showScreenProtectIfNeed];
@@ -1767,21 +1768,8 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
              [[WKNavigationManager shared] pushViewController:[WKCommonSettingVC new] animated:YES];
         }];
     } category:WKPOINT_CATEGORY_ME sort:6000];
-   
+
     
-    // 截屏通知
-    [[WKSDK shared].chatManager addMessageStoreBeforeIntercept:@"screent" intercept:^BOOL(WKMessage * _Nonnull message) {
-        if(message.contentType == WK_SCREENSHOT) {
-           WKChannelInfo *channelInfo =   [[WKSDK shared].channelManager getChannelInfo:message.channel];
-            if(channelInfo) {
-                if(![channelInfo settingForKey:WKChannelExtraKeyScreenshot defaultValue:YES]) {
-                    return NO;
-                }
-            }
-        }
-        return YES;
-    }];
-   
 }
 
 #pragma mark - WKNetworkListenerDelegate

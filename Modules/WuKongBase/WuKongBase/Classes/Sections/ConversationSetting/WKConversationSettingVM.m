@@ -268,6 +268,8 @@ static NSString * const WKChatBackgroundDefaultKey = @"wk_default";
 
 @property(nonatomic,strong) WKChannelInfo *_channelInfo;
 
+- (void)updateGroupCallSettingsAudio:(BOOL)audioEnabled video:(BOOL)videoEnabled;
+
 @end
 
 @implementation WKConversationSettingVM
@@ -614,6 +616,38 @@ static NSString * const WKChatBackgroundDefaultKey = @"wk_default";
             ]
         };
     } category:WKPOINT_CATEGORY_CHANNELSETTING sort:89430];
+
+    [[WKApp shared] setMethod:@"channelsetting.groupcall" handler:^id _Nullable(id  _Nonnull param) {
+        WKChannel *channel = param[@"channel"];
+        if(channel.channelType != WK_GROUP || ![param[@"is_creator_or_manager"] boolValue]) {
+            return nil;
+        }
+        BOOL audioEnabled = weakSelf.channelInfo.extra[@"audio_call_enabled"] ? [weakSelf.channelInfo.extra[@"audio_call_enabled"] boolValue] : YES;
+        BOOL videoEnabled = weakSelf.channelInfo.extra[@"video_call_enabled"] ? [weakSelf.channelInfo.extra[@"video_call_enabled"] boolValue] : YES;
+        return @{
+            @"height":@(0.0f),
+            @"items":@[
+                @{
+                    @"class":WKSwitchItemModel.class,
+                    @"label":LLang(@"音频通话"),
+                    @"on":@(audioEnabled),
+                    @"showBottomLine":@(NO),
+                    @"onSwitch":^(BOOL on){
+                        [weakSelf updateGroupCallSettingsAudio:on video:videoEnabled];
+                    }
+                },
+                @{
+                    @"class":WKSwitchItemModel.class,
+                    @"label":LLang(@"视频通话"),
+                    @"on":@(videoEnabled),
+                    @"showBottomLine":@(NO),
+                    @"onSwitch":^(BOOL on){
+                        [weakSelf updateGroupCallSettingsAudio:audioEnabled video:on];
+                    }
+                }
+            ]
+        };
+    } category:WKPOINT_CATEGORY_CHANNELSETTING sort:89420];
     
     [[WKApp shared] setMethod:@"channelsetting.top" handler:^id _Nullable(id  _Nonnull param) {
         return @{
@@ -866,6 +900,27 @@ static NSString * const WKChatBackgroundDefaultKey = @"wk_default";
                 [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLang(@"设置失败")];
             }
         });
+    });
+}
+
+- (void)updateGroupCallSettingsAudio:(BOOL)audioEnabled video:(BOOL)videoEnabled {
+    if(self.channel.channelType != WK_GROUP) {
+        return;
+    }
+    __weak typeof(self) weakSelf = self;
+    [[WKNavigationManager shared].topViewController.view showHUD];
+    [[WKAPIClient sharedClient] PUT:[NSString stringWithFormat:@"groups/%@/call-settings", self.channel.channelId] parameters:@{
+        @"audio_call_enabled": @(audioEnabled ? 1 : 0),
+        @"video_call_enabled": @(videoEnabled ? 1 : 0),
+    }].then(^{
+        [[WKNavigationManager shared].topViewController.view hideHud];
+        WKChannelInfo *channelInfo = weakSelf.channelInfo;
+        channelInfo.extra[@"audio_call_enabled"] = @(audioEnabled);
+        channelInfo.extra[@"video_call_enabled"] = @(videoEnabled);
+        [[WKSDK shared].channelManager addOrUpdateChannelInfo:channelInfo];
+    }).catch(^(NSError *error) {
+        [[WKNavigationManager shared].topViewController.view switchHUDError:error.domain];
+        [weakSelf reloadData];
     });
 }
 

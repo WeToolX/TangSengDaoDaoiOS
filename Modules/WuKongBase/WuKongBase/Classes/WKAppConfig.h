@@ -177,8 +177,6 @@ NS_ASSUME_NONNULL_BEGIN
 // 导航栏增加样式
 -(void) setThemeStyleNavigation:(UIView*)view;
 
-@property(nonatomic,assign) BOOL takeScreenshotOn; // 截屏通知是否开启
-
 @property(nonatomic,assign) NSTimeInterval defaultAnimationDuration; // 默认动画时间
 
 @end
@@ -194,6 +192,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic,assign) BOOL inviteSystemAccountJoinGroupOn; // 是否允许邀请系统账号加入群里
 
 @property(nonatomic,assign) BOOL registerUserMustCompleteInfoOn; // 用户注册是否必须要完善信息后才能进入
+@property(nonatomic,assign) BOOL globalScreenshotOn; // 全局截屏权限，默认允许
+@property(nonatomic,copy) NSString *contactWecomQRCode;
+@property(nonatomic,copy) NSString *contactEmail;
 
 @property(nonatomic,strong) NSArray<WKAppModuleResp*> *modules;
 

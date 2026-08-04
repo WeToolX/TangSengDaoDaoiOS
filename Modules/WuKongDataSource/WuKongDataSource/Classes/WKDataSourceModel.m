@@ -30,6 +30,8 @@
     groupModel.invite = dictory[@"invite"]?[dictory[@"invite"] boolValue]:false;
     groupModel.chatPwdOn = dictory[@"chat_pwd_on"]?[dictory[@"chat_pwd_on"] boolValue]:false;
     groupModel.allowViewHistoryMsg = dictory[@"allow_view_history_msg"]?[dictory[@"allow_view_history_msg"] boolValue]:false;
+    groupModel.audioCallEnabled = dictory[@"audio_call_enabled"] ? [dictory[@"audio_call_enabled"] boolValue] : true;
+    groupModel.videoCallEnabled = dictory[@"video_call_enabled"] ? [dictory[@"video_call_enabled"] boolValue] : true;
     groupModel.receipt =  dictory[@"receipt"]?[dictory[@"receipt"] boolValue]:false;
     if(dictory[@"version"]) {
         groupModel.version = [dictory[@"version"] longValue];
@@ -104,5 +106,4 @@
 
 
 @end
-
 

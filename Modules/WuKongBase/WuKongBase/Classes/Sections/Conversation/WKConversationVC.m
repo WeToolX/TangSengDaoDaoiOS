@@ -46,6 +46,9 @@
 @property(nonatomic,assign) BOOL chatPasswordVerified;
 @property(nonatomic,assign) BOOL chatPasswordPrompting;
 
+- (BOOL)isGroupCallEnabled:(WKRTCCallType)callType;
+- (BOOL)canUseGroupRTC;
+
 @end
 
 @implementation WKConversationVC
@@ -474,12 +477,41 @@
             support = NO;
         }
     }
-    [self showVideoCall:support];
+    self.channelHeader.voiceCallBtn.hidden = !support || ![self isGroupCallEnabled:WKRTCCallTypeAudio];
+    self.channelHeader.videoCallBtn.hidden = !support || ![self isGroupCallEnabled:WKRTCCallTypeVideo];
+    [self.channelHeader layoutSubviews];
+}
+
+- (BOOL)isGroupCallEnabled:(WKRTCCallType)callType {
+    if(self.channel.channelType != WK_GROUP) {
+        return YES;
+    }
+    WKChannelInfo *channelInfo = self.channelInfo ?: [[WKSDK shared].channelManager getChannelInfo:self.channel];
+    NSString *key = callType == WKRTCCallTypeVideo ? @"video_call_enabled" : @"audio_call_enabled";
+    NSNumber *value = channelInfo.extra[key];
+    return value ? value.boolValue : YES;
+}
+
+- (BOOL)canUseGroupRTC {
+    if(self.channel.channelType != WK_GROUP) {
+        return YES;
+    }
+    WKChannelMember *member = self.conversationView.conversationVM.memberOfMe ?: [[WKSDK shared].channelManager getMember:self.channel uid:WKApp.shared.loginInfo.uid];
+    if(member.role == WKMemberRoleCreator || member.role == WKMemberRoleManager) {
+        return YES;
+    }
+    WKChannelInfo *channelInfo = self.channelInfo ?: [[WKSDK shared].channelManager getChannelInfo:self.channel];
+    NSInteger forbiddenExpireTime = [member.extra[@"forbidden_expir_time"] integerValue];
+    return !channelInfo.forbidden && forbiddenExpireTime <= [[NSDate date] timeIntervalSince1970];
 }
 
 // 从会话页发起 RTC 通话，所有鉴权和媒体权限检查由会话管理器继续处理。
 -(void) startRTCCall:(WKRTCCallType)callType {
     if(self.channel.channelType == WK_GROUP) {
+        if(![self canUseGroupRTC]) {
+            [[WKNavigationManager shared].topViewController.view showMsg:LLang(@"禁言中，无法发起通话")];
+            return;
+        }
         [self showRTCGroupInviteOptionsForCallType:callType];
         return;
     }
@@ -678,6 +710,10 @@
         [self queryRTCChannelStateIfNeed];
         return;
     }
+    if(![self canUseGroupRTC]) {
+        [[WKNavigationManager shared].topViewController.view showMsg:LLang(@"禁言中，无法加入通话")];
+        return;
+    }
     [[WKNavigationManager shared].topViewController.view showHUD:LLang(@"正在加入")];
     __weak typeof(self) weakSelf = self;
     [[WKRTCSessionManager shared] joinCallWithPayload:payload joinCode:@"" completion:^(NSError * _Nullable error) {
@@ -808,6 +844,7 @@
     if([self.channel isEqual:channelInfo.channel]) { // 更新的当前会话的信息
         self.channelInfo = channelInfo;
         self.conversationView.conversationVM.channelInfo = self.channelInfo;
+        [self refreshRTCCallButtons];
         [self channelInfoLoadFinished];
         if(oldChannelInfo.flame!=channelInfo.flame) {
             [(id<WKConversationContext>)self.conversationView.conversationContext refreshInputView];

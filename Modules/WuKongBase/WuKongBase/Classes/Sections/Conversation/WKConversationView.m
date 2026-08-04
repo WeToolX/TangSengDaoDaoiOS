@@ -20,7 +20,6 @@
 #import "WKMultiplePanel.h"
 #import "WKConversationListSelectVC.h"
 #import "WKMergeForwardContent.h"
-#import "WKScreenshotContent.h"
 #import "WKConversationView+Robot.h"
 
 
@@ -131,8 +130,6 @@
         [self.input becomeFirstResponder]; // 弹出键盘
         self.keepKeyboard = false;
     }
-    // 截屏通知
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userDidTakeScreenshot) name:UIApplicationUserDidTakeScreenshotNotification object:nil];
     if(self.inputParentView != self) {
         [self.inputParentView addSubview:self.input];
     }
@@ -159,15 +156,6 @@
     }
     
 }
--(void) viewDidDisappear {
-    // 截屏通知
-    if(WKApp.shared.config.takeScreenshotOn) {
-        [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationUserDidTakeScreenshotNotification object:nil];
-    }
-   
-   
-}
-
 -(void) requestMembers {
     [self.conversationVM requestMembers];
 }
@@ -231,9 +219,7 @@
 
 -(void) removeDelegates {
     // 移除长按菜单隐藏监听
-    if(WKApp.shared.config.takeScreenshotOn) {
-        [[NSNotificationCenter defaultCenter] removeObserver:self name:UIMenuControllerDidHideMenuNotification object:nil];
-    }
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIMenuControllerDidHideMenuNotification object:nil];
 }
 
 - (void)layoutSubviews {
@@ -296,11 +282,6 @@
         
 }
 
-
-// 用户截屏
--(void) userDidTakeScreenshot {
-    [self.conversationContext sendMessage:WKScreenshotContent.new];
-}
 
 -(void) requestSetUnreadIfNeed {
     WKConversation *conversation = [[WKSDK shared].conversationManager getConversation:self.channel];
