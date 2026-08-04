@@ -156,6 +156,11 @@
     }
     
 }
+
+// 保留供 WKConversationVC 调用的自定义生命周期接口；截屏监听已移除，无需清理。
+- (void)viewDidDisappear {
+}
+
 -(void) requestMembers {
     [self.conversationVM requestMembers];
 }
