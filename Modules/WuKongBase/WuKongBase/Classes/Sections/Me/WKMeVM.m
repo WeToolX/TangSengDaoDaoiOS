@@ -77,7 +77,7 @@
     if(!itemModels || itemModels.count<=0) {
         return @[];
     }
-    WKMeItem *contactItem = [WKMeItem initWithTitle:LLang(@"联系我们") icon:[self imageName:@"Me/Index/IconSetting"] onClick:^{
+    WKMeItem *contactItem = [WKMeItem initWithTitle:LLang(@"联系我们") icon:[self imageName:@"Me/Index/ContactUs"] onClick:^{
         [[WKNavigationManager shared] pushViewController:[WKContactUsVC new] animated:YES];
     }];
     NSUInteger commonIndex = [itemModels indexOfObjectPassingTest:^BOOL(WKMeItem * _Nonnull item, NSUInteger idx, BOOL * _Nonnull stop) {
