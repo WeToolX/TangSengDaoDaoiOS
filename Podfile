@@ -161,6 +161,16 @@ post_install do |installer|
         end.join
         File.write(xcconfig_path, content)
     end
+
+    # Xcode 26 将 netinet6/in6.h 标记为私有头文件；netinet/in.h 已提供所需 IPv6 定义。
+    Dir.glob(File.join(installer.sandbox.root, 'AFNetworking', 'AFNetworking', '*.m')).each do |source_path|
+        content = File.read(source_path)
+        next unless content.include?("#import <netinet6/in6.h>\n")
+
+        File.chmod(0o644, source_path)
+        File.write(source_path, content.gsub("#import <netinet6/in6.h>\n", ''))
+    end
+
     installer.pods_project.save
     project.save
 end
