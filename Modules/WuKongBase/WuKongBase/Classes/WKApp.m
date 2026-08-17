@@ -1731,7 +1731,7 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
     
     // PC端
     [self setMethod:WKPOINT_ME_WEB handler:^id _Nullable(id  _Nonnull param) {
-        return [WKMeItem initWithTitle:LLangW(@"网页端",weakSelf) icon:[weakSelf imageName:@"Me/Index/IconPC"] nextSectionHeight:10.0f onClick:^{
+        return [WKMeItem initWithTitle:LLangW(@"电脑端登录",weakSelf) icon:[weakSelf imageName:@"Me/Index/IconPC"] nextSectionHeight:10.0f onClick:^{
             [[WKNavigationManager shared] pushViewController:[WKWebClientInfoVC new] animated:YES];
         }];
     } category:WKPOINT_CATEGORY_ME sort:18000];

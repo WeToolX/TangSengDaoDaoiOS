@@ -80,10 +80,28 @@
     WKMeItem *contactItem = [WKMeItem initWithTitle:LLang(@"联系我们") icon:[self imageName:@"Me/Index/ContactUs"] onClick:^{
         [[WKNavigationManager shared] pushViewController:[WKContactUsVC new] animated:YES];
     }];
-    NSUInteger commonIndex = [itemModels indexOfObjectPassingTest:^BOOL(WKMeItem * _Nonnull item, NSUInteger idx, BOOL * _Nonnull stop) {
-        return [item.title isEqualToString:LLang(@"通用")];
-    }];
-    [itemModels insertObject:contactItem atIndex:commonIndex == NSNotFound ? itemModels.count : commonIndex + 1];
+    [itemModels addObject:contactItem];
+    NSArray<NSString *> *orderedTitles = @[
+        LLang(@"电脑端登录"),
+        LLang(@"绑定邀请码"),
+        LLang(@"我的收藏"),
+        LLang(@"安全与隐私"),
+        LLang(@"联系我们"),
+        LLang(@"新消息通知"),
+        LLang(@"通用")
+    ];
+    NSMutableArray<WKMeItem *> *orderedItems = [NSMutableArray arrayWithCapacity:itemModels.count];
+    for(NSString *title in orderedTitles) {
+        WKMeItem *item = [itemModels filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(WKMeItem *candidate, NSDictionary *bindings) {
+            return [candidate.title isEqualToString:title];
+        }]].firstObject;
+        if(item) {
+            [orderedItems addObject:item];
+            [itemModels removeObject:item];
+        }
+    }
+    [orderedItems addObjectsFromArray:itemModels];
+    itemModels = orderedItems;
     NSMutableArray *items = [NSMutableArray array];
     WKMeItem *preMeItem;
     for (WKMeItem *meItem in itemModels) {
