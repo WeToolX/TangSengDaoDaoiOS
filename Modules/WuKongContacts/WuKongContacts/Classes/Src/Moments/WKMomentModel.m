@@ -116,6 +116,11 @@ static BOOL WKMomentBool(NSDictionary *dict, NSArray<NSString*> *keys) {
         }
     }
     post.mentions = [NSMutableArray array];
+    for(NSDictionary *item in (NSArray*)WKMomentValue(dictory, @[@"mentions",@"Mentions"]) ?: @[]) {
+        if([item isKindOfClass:NSDictionary.class]) {
+            [post.mentions addObject:(WKMomentActor*)[WKMomentActor fromMap:item type:type]];
+        }
+    }
     return post;
 }
 

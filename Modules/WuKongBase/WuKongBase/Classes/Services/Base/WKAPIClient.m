@@ -178,19 +178,23 @@
 }
 
 -(NSURLSessionDataTask*) fileUpload:(NSString*)path data:(NSData*)data progress:(void(^)(NSProgress *progress)) progressCallback completeCallback:(void(^)(id resposeObject,NSError *error)) completeCallback {
-    return [self fileUpload:path data:data fileName:@"filename" progress:progressCallback completeCallback:completeCallback];
+    return [self fileUpload:path data:data fileName:@"filename" mimeType:@"application/octet-stream" progress:progressCallback completeCallback:completeCallback];
     
 }
 
 -(NSURLSessionDataTask*) fileUpload:(NSString*)path data:(NSData*)data fileName:(NSString*)fileName progress:(void(^)(NSProgress *progress)) progressCallback completeCallback:(void(^)(id resposeObject,NSError *error)) completeCallback {
+    return [self fileUpload:path data:data fileName:fileName mimeType:@"application/octet-stream" progress:progressCallback completeCallback:completeCallback];
+}
+
+-(NSURLSessionDataTask*) fileUpload:(NSString*)path data:(NSData*)data fileName:(NSString*)fileName mimeType:(NSString*)mimeType progress:(void(^)(NSProgress *progress)) progressCallback completeCallback:(void(^)(id resposeObject,NSError *error)) completeCallback {
     NSString *requestPath = path;
     if(_config.requestPathReplace) {
         requestPath = _config.requestPathReplace(path);
     }
     [self resetPublicHeader];
     return  [_sessionManager POST:[self pathURLEncode:requestPath] parameters:nil headers:nil constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
-       //  [formData appendPartWithFileData:data name:@"file" fileName:@"filename" mimeType:@"*"];
-      [formData appendPartWithFileData:data name:@"file" fileName:fileName mimeType:@"*"];
+      [formData appendPartWithFormData:[mimeType dataUsingEncoding:NSUTF8StringEncoding] name:@"contenttype"];
+      [formData appendPartWithFileData:data name:@"file" fileName:fileName mimeType:mimeType];
     } progress:^(NSProgress * _Nonnull uploadProgress) {
         if(progressCallback) {
             progressCallback(uploadProgress);
@@ -207,6 +211,11 @@
 }
 
 -(NSURLSessionDataTask*) fileUpload:(NSString*)path fileURL:(NSString*)fileUrl progress:(void(^)(NSProgress *progress)) progressCallback completeCallback:(void(^)(id resposeObject,NSError *error)) completeCallback {
+    NSURL *url = [NSURL URLWithString:fileUrl];
+    return [self fileUpload:path fileURL:fileUrl fileName:url.lastPathComponent ?: @"filename" mimeType:@"application/octet-stream" progress:progressCallback completeCallback:completeCallback];
+}
+
+-(NSURLSessionDataTask*) fileUpload:(NSString*)path fileURL:(NSString*)fileUrl fileName:(NSString*)fileName mimeType:(NSString*)mimeType progress:(void(^)(NSProgress *progress)) progressCallback completeCallback:(void(^)(id resposeObject,NSError *error)) completeCallback {
     NSString *requestPath = path;
     if(_config.requestPathReplace) {
         requestPath = _config.requestPathReplace(path);
@@ -214,7 +223,8 @@
     [self resetPublicHeader];
     return  [_sessionManager POST:[self pathURLEncode:requestPath] parameters:nil headers:nil constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
         NSError *fileError;
-        [formData appendPartWithFileURL:[NSURL URLWithString:fileUrl] name:@"file" error:&fileError];
+        [formData appendPartWithFormData:[mimeType dataUsingEncoding:NSUTF8StringEncoding] name:@"contenttype"];
+        [formData appendPartWithFileURL:[NSURL URLWithString:fileUrl] name:@"file" fileName:fileName mimeType:mimeType error:&fileError];
       if(fileError) {
           WKLogError(@"fileError-> %@",fileError);
       }

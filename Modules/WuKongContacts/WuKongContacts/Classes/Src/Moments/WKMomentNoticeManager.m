@@ -115,8 +115,6 @@ static NSString * const WKMomentNoticeSyncCMD = @"momentNoticeSync";
 -(void)markAllRead {
     [self.vm readNotices:@[] readAll:YES].then(^{
         self.unreadCount = 0;
-    }).catch(^(NSError *error) {
-        self.unreadCount = 0;
     });
 }
 

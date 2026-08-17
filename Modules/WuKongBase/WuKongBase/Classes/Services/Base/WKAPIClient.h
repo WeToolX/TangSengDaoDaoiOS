@@ -73,6 +73,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 -(NSURLSessionDataTask* _Nonnull) fileUpload:(NSString* _Nonnull)path fileURL:(NSString* _Nonnull)fileUrl progress:(void(^ _Nullable)(NSProgress * _Nonnull progress)) progressCallback completeCallback:(void(^ _Nullable)(id __nullable resposeObject,NSError * __nullable error)) completeCallback;
+-(NSURLSessionDataTask* _Nonnull) fileUpload:(NSString* _Nonnull)path fileURL:(NSString* _Nonnull)fileUrl fileName:(NSString* _Nonnull)fileName mimeType:(NSString* _Nonnull)mimeType progress:(void(^ _Nullable)(NSProgress * _Nonnull progress)) progressCallback completeCallback:(void(^ _Nullable)(id __nullable resposeObject,NSError * __nullable error)) completeCallback;
 
 
 /// 文件上传
@@ -83,6 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(NSURLSessionDataTask* _Nonnull) fileUpload:(NSString* _Nonnull)path data:(NSData* _Nonnull)data progress:(void(^_Nullable)(NSProgress * _Nonnull progress)) progressCallback completeCallback:(void(^_Nullable)(id __nullable resposeObject,NSError * __nullable error)) completeCallback;
 
 -(NSURLSessionDataTask*) fileUpload:(NSString*)path data:(NSData*)data fileName:(NSString*)fileName progress:(void(^_Nullable)(NSProgress *progress)) progressCallback completeCallback:(void(^)(id resposeObject,NSError *error)) completeCallback ;
+-(NSURLSessionDataTask*) fileUpload:(NSString*)path data:(NSData*)data fileName:(NSString*)fileName mimeType:(NSString*)mimeType progress:(void(^_Nullable)(NSProgress *progress)) progressCallback completeCallback:(void(^)(id resposeObject,NSError *error)) completeCallback;
 
 
 /**

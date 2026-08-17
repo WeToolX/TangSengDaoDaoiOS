@@ -7,6 +7,7 @@
 #import "WKMomentVM.h"
 #import <WuKongBase/WKMediaPickerController.h>
 #import <WuKongBase/WKContactsSelectVC.h>
+#import <WuKongBase/UIViewController+Navigation.h>
 #import "WKContactsLabelVM.h"
 #import "UIView+WK.h"
 #import "UIView+WKCommon.h"
@@ -14,7 +15,7 @@
 #import <AVKit/AVKit.h>
 #import <MobileCoreServices/MobileCoreServices.h>
 
-@interface WKMomentComposeVC ()
+@interface WKMomentComposeVC () <UITextViewDelegate>
 @property(nonatomic,strong) UITextView *textView;
 @property(nonatomic,strong) UIButton *sendBtn;
 @property(nonatomic,strong) UIButton *addPhotoBtn;
@@ -33,7 +34,25 @@
 @property(nonatomic,strong) NSMutableArray<NSNumber*> *visibilityTagIds;
 @property(nonatomic,strong) WKMediaFetcher *mediaFetcher;
 @property(nonatomic,strong) WKMomentVM *vm;
+@property(nonatomic,copy) NSString *clientReqID;
+@property(nonatomic,copy) NSString *draftText;
 @end
+
+static NSString *WKMomentComposeText(UITextView *textView) {
+    applyKeyboardAutocorrection(textView);
+    NSString *text = textView.textStorage.string;
+    if(text.length == 0) {
+        UITextRange *range = [textView textRangeFromPosition:textView.beginningOfDocument toPosition:textView.endOfDocument];
+        text = range ? [textView textInRange:range] : nil;
+    }
+    if(text.length == 0) {
+        text = textView.attributedText.string;
+    }
+    if(text.length == 0) {
+        text = textView.text;
+    }
+    return [text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+}
 
 @implementation WKMomentComposeVC
 
@@ -47,6 +66,8 @@
         _visibilityType = @"public";
         _visibilityUids = [NSMutableArray array];
         _visibilityTagIds = [NSMutableArray array];
+        _draftText = @"";
+        _clientReqID = [NSString stringWithFormat:@"ios_moment_%@",NSUUID.UUID.UUIDString.lowercaseString];
     }
     return self;
 }
@@ -113,6 +134,7 @@
         _textView.font = [WKApp.shared.config appFontOfSize:18.0f];
         _textView.textContainerInset = UIEdgeInsetsMake(0.0f, 0.0f, 0.0f, 0.0f);
         _textView.textContainer.lineFragmentPadding = 0.0f;
+        _textView.delegate = self;
     }
     return _textView;
 }
@@ -307,11 +329,11 @@
         imageView.image = self.videoCover;
         imageView.userInteractionEnabled = YES;
         [imageView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(previewVideo)]];
-        UILabel *play = [[UILabel alloc] initWithFrame:imageView.bounds];
-        play.text = @"▶";
-        play.textColor = UIColor.whiteColor;
-        play.textAlignment = NSTextAlignmentCenter;
-        play.font = [WKApp.shared.config appFontOfSize:30.0f];
+        UIImageView *play = [[UIImageView alloc] initWithFrame:imageView.bounds];
+        play.image = [UIImage systemImageNamed:@"play.fill"];
+        play.tintColor = UIColor.whiteColor;
+        play.contentMode = UIViewContentModeCenter;
+        play.preferredSymbolConfiguration = [UIImageSymbolConfiguration configurationWithPointSize:30.0f weight:UIImageSymbolWeightSemibold];
         [imageView addSubview:play];
         UIButton *deleteButton = [[UIButton alloc] initWithFrame:CGRectMake(58.0f, 4.0f, 26.0f, 26.0f)];
         deleteButton.backgroundColor = [UIColor colorWithWhite:0.0f alpha:0.55f];
@@ -397,10 +419,10 @@
 -(void)mentionPressed {
     UIAlertController *sheet = [UIAlertController alertControllerWithTitle:nil message:nil preferredStyle:UIAlertControllerStyleActionSheet];
     [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"从通讯录选择") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        [self chooseContactsForMention:YES];
+        [self chooseContactsForMention:YES visibilityType:nil];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"从标签选择") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        [self chooseLabelForMention:YES];
+        [self chooseLabelForMention:YES visibilityType:nil];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"清空") style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
         [self.mentionUids removeAllObjects];
@@ -426,26 +448,22 @@
         [self reloadOptions];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"部分可见-联系人") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        self.visibilityType = @"partial_visible";
-        [self chooseContactsForMention:NO];
+        [self chooseContactsForMention:NO visibilityType:@"partial_visible"];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"不给谁看-联系人") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        self.visibilityType = @"exclude_visible";
-        [self chooseContactsForMention:NO];
+        [self chooseContactsForMention:NO visibilityType:@"exclude_visible"];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"部分可见-标签") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        self.visibilityType = @"partial_visible";
-        [self chooseLabelForMention:NO];
+        [self chooseLabelForMention:NO visibilityType:@"partial_visible"];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"不给谁看-标签") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        self.visibilityType = @"exclude_visible";
-        [self chooseLabelForMention:NO];
+        [self chooseLabelForMention:NO visibilityType:@"exclude_visible"];
     }]];
     [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:nil]];
     [self presentViewController:sheet animated:YES completion:nil];
 }
 
--(void)chooseContactsForMention:(BOOL)mention {
+-(void)chooseContactsForMention:(BOOL)mention visibilityType:(NSString*)visibilityType {
     WKContactsSelectVC *vc = [WKContactsSelectVC new];
     vc.title = LLang(@"选择联系人");
     vc.showBack = YES;
@@ -461,13 +479,14 @@
             [weakSelf.visibilityUids removeAllObjects];
             [weakSelf.visibilityUids addObjectsFromArray:uids ?: @[]];
             [weakSelf.visibilityTagIds removeAllObjects];
+            weakSelf.visibilityType = uids.count > 0 ? visibilityType : @"public";
         }
         [weakSelf reloadOptions];
     };
     [[WKNavigationManager shared] pushViewController:vc animated:YES];
 }
 
--(void)chooseLabelForMention:(BOOL)mention {
+-(void)chooseLabelForMention:(BOOL)mention visibilityType:(NSString*)visibilityType {
     WKContactsLabelVM *vm = [WKContactsLabelVM new];
     [vm labelsFull].then(^(NSArray<WKContactsLabel*> *labels) {
         UIAlertController *sheet = [UIAlertController alertControllerWithTitle:LLang(@"选择标签") message:nil preferredStyle:UIAlertControllerStyleActionSheet];
@@ -481,6 +500,7 @@
                     [self.visibilityTagIds removeAllObjects];
                     [self.visibilityTagIds addObject:@(label.tagId)];
                     [self.visibilityUids removeAllObjects];
+                    self.visibilityType = visibilityType;
                 }
                 [self reloadOptions];
             }]];
@@ -504,7 +524,11 @@
 }
 
 -(void)sendPressed {
-    NSString *text = [self.textView.text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    NSString *text = WKMomentComposeText(self.textView);
+    if(text.length == 0) {
+        text = [self.draftText stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    }
+    WKLogDebug(@"朋友圈发布文本长度：%ld", (long)text.length);
     if(text.length == 0 && self.imageDatas.count == 0 && self.videoPath.length == 0) {
         [self.view showHUDWithHide:LLang(@"请输入内容")];
         return;
@@ -532,7 +556,7 @@
             NSString *visibilityType = self.visibilityType ? self.visibilityType : @"public";
             NSDictionary *mention = @{@"uids":mentionUids,@"tag_ids":mentionTagIds};
             NSDictionary *visibility = @{@"type":visibilityType,@"uids":visibilityUids,@"tag_ids":visibilityTagIds};
-            AnyPromise *promise = [self.vm publishText:text imagePaths:paths video:video mention:mention visibility:visibility];
+            AnyPromise *promise = [self.vm publishText:text imagePaths:paths imageDatas:self.imageDatas video:video mention:mention visibility:visibility clientReqID:self.clientReqID];
             promise.then(^{
                 [self.view hideHud];
                 if(self.onPublished) {
@@ -547,6 +571,10 @@
             });
         }];
     }];
+}
+
+-(void)textViewDidChange:(UITextView *)textView {
+    self.draftText = textView.textStorage.string ?: textView.text ?: @"";
 }
 
 -(void)uploadVideoIfNeeded:(void(^)(WKMomentPublishMedia *, NSError *))completion {

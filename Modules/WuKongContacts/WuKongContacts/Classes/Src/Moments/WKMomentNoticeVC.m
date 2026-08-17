@@ -6,6 +6,7 @@
 #import "WKMomentNoticeVC.h"
 #import "WKMomentVM.h"
 #import "WKMomentNoticeManager.h"
+#import "WKMomentTimelineVC.h"
 #import "UIView+WK.h"
 #import "UIView+WKCommon.h"
 
@@ -220,4 +221,15 @@
     return cell;
 }
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath { return 82.0f; }
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    WKMomentNotice *notice = self.notices[indexPath.row];
+    if(notice.postId.length == 0) {
+        return;
+    }
+    [self.vm detail:notice.postId].then(^(WKMomentPost *post) {
+        [[WKNavigationManager shared] pushViewController:[[WKMomentTimelineVC alloc] initWithPost:post] animated:YES];
+    }).catch(^(NSError *error) {
+        [self.view showHUDWithHide:error.domain];
+    });
+}
 @end

@@ -85,9 +85,11 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
 @property(nonatomic,strong) UIView *box;
 @property(nonatomic,strong) UIButton *likeBtn;
 @property(nonatomic,strong) UIButton *commentBtn;
+@property(nonatomic,strong) UIButton *deleteBtn;
 @property(nonatomic,copy) void(^onLike)(void);
 @property(nonatomic,copy) void(^onComment)(void);
--(void)showFromRect:(CGRect)rect liked:(BOOL)liked inView:(UIView*)view;
+@property(nonatomic,copy) void(^onDelete)(void);
+-(void)showFromRect:(CGRect)rect liked:(BOOL)liked canDelete:(BOOL)canDelete inView:(UIView*)view;
 -(UIImage*)momentImage:(NSString*)name;
 @end
 
@@ -105,21 +107,26 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
 
 -(UIView *)box {
     if(!_box) {
-        _box = [[UIView alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 212.0f, 46.0f)];
+        _box = [[UIView alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 288.0f, 46.0f)];
         _box.backgroundColor = [UIColor colorWithRed:45.0f/255.0f green:45.0f/255.0f blue:45.0f/255.0f alpha:1.0f];
         _box.layer.cornerRadius = 4.0f;
+        _box.clipsToBounds = YES;
         [_box addSubview:self.likeBtn];
         [_box addSubview:self.commentBtn];
-        UIView *line = [[UIView alloc] initWithFrame:CGRectMake(106.0f, 10.0f, 0.5f, 26.0f)];
+        [_box addSubview:self.deleteBtn];
+        UIView *line = [[UIView alloc] initWithFrame:CGRectMake(96.0f, 10.0f, 0.5f, 26.0f)];
         line.backgroundColor = [UIColor colorWithWhite:1.0f alpha:0.15f];
         [_box addSubview:line];
+        UIView *deleteLine = [[UIView alloc] initWithFrame:CGRectMake(192.0f, 10.0f, 0.5f, 26.0f)];
+        deleteLine.backgroundColor = line.backgroundColor;
+        [_box addSubview:deleteLine];
     }
     return _box;
 }
 
 -(UIButton *)likeBtn {
     if(!_likeBtn) {
-        _likeBtn = [[UIButton alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 106.0f, 46.0f)];
+        _likeBtn = [[UIButton alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 96.0f, 46.0f)];
         _likeBtn.titleLabel.font = [WKApp.shared.config appFontOfSize:16.0f];
         [_likeBtn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
         _likeBtn.tintColor = UIColor.whiteColor;
@@ -132,7 +139,7 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
 
 -(UIButton *)commentBtn {
     if(!_commentBtn) {
-        _commentBtn = [[UIButton alloc] initWithFrame:CGRectMake(106.0f, 0.0f, 106.0f, 46.0f)];
+        _commentBtn = [[UIButton alloc] initWithFrame:CGRectMake(96.0f, 0.0f, 96.0f, 46.0f)];
         _commentBtn.titleLabel.font = [WKApp.shared.config appFontOfSize:16.0f];
         [_commentBtn setTitle:LLang(@"评论") forState:UIControlStateNormal];
         [_commentBtn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
@@ -146,15 +153,28 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
     return _commentBtn;
 }
 
--(void)showFromRect:(CGRect)rect liked:(BOOL)liked inView:(UIView*)view {
+-(UIButton *)deleteBtn {
+    if(!_deleteBtn) {
+        _deleteBtn = [[UIButton alloc] initWithFrame:CGRectMake(192.0f, 0.0f, 96.0f, 46.0f)];
+        _deleteBtn.titleLabel.font = [WKApp.shared.config appFontOfSize:16.0f];
+        [_deleteBtn setTitle:LLang(@"删除") forState:UIControlStateNormal];
+        [_deleteBtn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
+        [_deleteBtn addTarget:self action:@selector(deletePressed) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _deleteBtn;
+}
+
+-(void)showFromRect:(CGRect)rect liked:(BOOL)liked canDelete:(BOOL)canDelete inView:(UIView*)view {
     self.frame = view.bounds;
     [view addSubview:self];
+    self.deleteBtn.hidden = !canDelete;
     [self.likeBtn setTitle:(liked ? LLang(@"取消") : LLang(@"点赞")) forState:UIControlStateNormal];
     [self.likeBtn setImage:WKMomentMenuIconImage(liked ? @"Moments/Timeline/LikeMenuActive" : @"Moments/Timeline/LikeOutline") forState:UIControlStateNormal];
     self.likeBtn.imageEdgeInsets = UIEdgeInsetsMake(0.0f, -6.0f, 0.0f, 0.0f);
-    CGFloat x = MAX(12.0f, MIN(rect.origin.x - 212.0f + 4.0f, view.lim_width - 224.0f));
+    CGFloat menuWidth = canDelete ? 288.0f : 192.0f;
+    CGFloat x = MAX(12.0f, MIN(rect.origin.x - menuWidth + 4.0f, view.lim_width - menuWidth - 12.0f));
     CGFloat y = CGRectGetMidY(rect) - 23.0f;
-    self.box.frame = CGRectMake(x, y, 212.0f, 46.0f);
+    self.box.frame = CGRectMake(x, y, menuWidth, 46.0f);
     self.box.alpha = 0.0f;
     self.box.transform = CGAffineTransformMakeScale(0.86f, 0.86f);
     [UIView animateWithDuration:0.18f animations:^{
@@ -170,6 +190,11 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
 
 -(void)commentPressed {
     if(self.onComment) self.onComment();
+    [self dismiss];
+}
+
+-(void)deletePressed {
+    if(self.onDelete) self.onDelete();
     [self dismiss];
 }
 
@@ -274,7 +299,7 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
 @property(nonatomic,copy) void(^onCoverTap)(void);
 @property(nonatomic,copy) void(^onNoticeTap)(void);
 @property(nonatomic,copy) void(^onAvatarTap)(void);
--(void)refreshWithUID:(NSString*)uid name:(NSString*)name avatar:(NSString*)avatar cover:(NSString*)cover;
+-(void)refreshWithUID:(NSString*)uid name:(NSString*)name avatar:(NSString*)avatar cover:(NSString*)cover version:(NSInteger)version;
 -(void)refreshNoticeCount:(NSInteger)count;
 @end
 
@@ -368,11 +393,19 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
     self.noticeBubble.lim_top = self.coverView.lim_bottom + 8.0f;
 }
 
--(void)refreshWithUID:(NSString*)uid name:(NSString*)name avatar:(NSString*)avatar cover:(NSString*)cover {
+-(void)refreshWithUID:(NSString*)uid name:(NSString*)name avatar:(NSString*)avatar cover:(NSString*)cover version:(NSInteger)version {
     self.nameLbl.text = name.length > 0 ? name : uid;
     self.avatarView.url = avatar.length > 0 ? [WKAvatarUtil getFullAvatarWIthPath:avatar] : [WKAvatarUtil getAvatar:uid];
     if(cover.length > 0) {
-        [self.coverView lim_setImageWithURL:[WKApp.shared getFileFullUrl:cover]];
+        NSURL *url = [WKApp.shared getFileFullUrl:cover];
+        if(version > 0) {
+            NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+            NSMutableArray *items = [NSMutableArray arrayWithArray:components.queryItems ?: @[]];
+            [items addObject:[NSURLQueryItem queryItemWithName:@"v" value:[NSString stringWithFormat:@"%ld",(long)version]]];
+            components.queryItems = items;
+            url = components.URL;
+        }
+        [self.coverView lim_setImageWithURL:url];
     }else {
         self.coverView.image = nil;
     }
@@ -420,6 +453,7 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
 @property(nonatomic,copy) void(^onAction)(WKMomentPost *post, CGRect rect);
 @property(nonatomic,copy) void(^onMediaTap)(WKMomentMedia *media, UIImageView *imageView);
 @property(nonatomic,copy) void(^onAvatarTap)(WKMomentPost *post);
+@property(nonatomic,copy) void(^onCommentsTap)(WKMomentPost *post);
 -(void)refresh:(WKMomentPost*)post;
 +(CGFloat)heightForPost:(WKMomentPost*)post;
 @end
@@ -556,6 +590,8 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
         _commentsLbl.textColor = WKApp.shared.config.defaultTextColor;
         _commentsLbl.font = [WKApp.shared.config appFontOfSize:14.0f];
         _commentsLbl.numberOfLines = 0;
+        _commentsLbl.userInteractionEnabled = YES;
+        [_commentsLbl addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(commentsPressed)]];
     }
     return _commentsLbl;
 }
@@ -678,11 +714,11 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
             shade.backgroundColor = [UIColor colorWithWhite:0.0f alpha:0.18f];
             shade.userInteractionEnabled = NO;
             [imageView addSubview:shade];
-            UILabel *play = [[UILabel alloc] initWithFrame:imageView.bounds];
-            play.text = @"▶";
-            play.textColor = UIColor.whiteColor;
-            play.textAlignment = NSTextAlignmentCenter;
-            play.font = [WKApp.shared.config appFontOfSize:28.0f];
+            UIImageView *play = [[UIImageView alloc] initWithFrame:imageView.bounds];
+            play.image = [UIImage systemImageNamed:@"play.fill"];
+            play.tintColor = UIColor.whiteColor;
+            play.contentMode = UIViewContentModeCenter;
+            play.preferredSymbolConfiguration = [UIImageSymbolConfiguration configurationWithPointSize:28.0f weight:UIImageSymbolWeightSemibold];
             play.userInteractionEnabled = NO;
             [imageView addSubview:play];
         }
@@ -739,6 +775,12 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
     }
 }
 
+-(void)commentsPressed {
+    if(self.onCommentsTap) {
+        self.onCommentsTap(self.post);
+    }
+}
+
 +(CGFloat)mediaHeight:(WKMomentPost*)post {
     if(post.medias.count == 0) {
         return 0.0f;
@@ -792,6 +834,8 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
 @property(nonatomic,assign) BOOL loading;
 @property(nonatomic,assign) BOOL hasMore;
 @property(nonatomic,copy) NSString *cover;
+@property(nonatomic,assign) NSInteger coverVersion;
+@property(nonatomic,strong) WKMomentPost *initialPost;
 @end
 
 @implementation WKMomentTimelineVC
@@ -823,6 +867,14 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
 
 -(instancetype)initWithActor:(WKMomentActor *)actor {
     return [self initWithUID:actor.uid name:actor.name avatar:actor.avatar];
+}
+
+-(instancetype)initWithPost:(WKMomentPost*)post {
+    self = [self initWithUID:post.user.uid ?: @"" name:post.user.name avatar:post.user.avatar];
+    if(self) {
+        _initialPost = post;
+    }
+    return self;
 }
 
 -(void)viewDidLoad {
@@ -933,9 +985,10 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
     __weak typeof(self) weakSelf = self;
     [self.vm profile:self.targetUID].then(^(WKMomentProfile *profile) {
         weakSelf.cover = profile.cover;
-        [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName avatar:weakSelf.targetAvatar cover:weakSelf.cover];
+        weakSelf.coverVersion = profile.version;
+        [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName avatar:weakSelf.targetAvatar cover:weakSelf.cover version:weakSelf.coverVersion];
     }).catch(^(NSError *error) {
-        [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName avatar:weakSelf.targetAvatar cover:nil];
+        [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName avatar:weakSelf.targetAvatar cover:nil version:0];
     });
 }
 
@@ -959,6 +1012,16 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
         }
         if(reset) {
             [weakSelf.posts removeAllObjects];
+            BOOL included = NO;
+            for(WKMomentPost *item in items) {
+                if([item.postId isEqualToString:weakSelf.initialPost.postId]) {
+                    included = YES;
+                    break;
+                }
+            }
+            if(weakSelf.initialPost && !included) {
+                [weakSelf.posts addObject:weakSelf.initialPost];
+            }
         }
         [weakSelf.posts addObjectsFromArray:items ?: @[]];
         weakSelf.hasMore = items.count >= 20;
@@ -1110,7 +1173,8 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
             [weakSelf.vm setCover:path].then(^{
                 [weakSelf.view hideHud];
                 weakSelf.cover = path;
-                [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName avatar:weakSelf.targetAvatar cover:path];
+                weakSelf.coverVersion += 1;
+                [weakSelf.headerView refreshWithUID:weakSelf.targetUID name:weakSelf.targetName avatar:weakSelf.targetAvatar cover:path version:weakSelf.coverVersion];
             }).catch(^(NSError *error) {
                 [weakSelf.view hideHud];
                 [weakSelf.view showHUDWithHide:error.domain];
@@ -1127,8 +1191,11 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
     self.actionMenu.onComment = ^{
         [weakSelf inputComment:post reply:nil];
     };
+    self.actionMenu.onDelete = ^{
+        [weakSelf deletePost:post];
+    };
     CGRect viewRect = [self.view convertRect:rect fromView:nil];
-    [self.actionMenu showFromRect:viewRect liked:post.likedByMe inView:self.view];
+    [self.actionMenu showFromRect:viewRect liked:post.likedByMe canDelete:post.canDelete inView:self.view];
 }
 
 -(void)toggleLike:(WKMomentPost*)post {
@@ -1160,13 +1227,62 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
     [self presentViewController:alert animated:YES completion:nil];
 }
 
--(void)deletePost:(WKMomentPost*)post {
-    [self.vm deletePost:post.postId].then(^{
-        [self.posts removeObject:post];
-        [self.tableView reloadData];
+-(void)showCommentOptions:(WKMomentPost*)post {
+    if(post.comments.count == 0) {
+        [self inputComment:post reply:nil];
+        return;
+    }
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:LLang(@"选择评论") message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    __weak typeof(self) weakSelf = self;
+    for(WKMomentComment *comment in post.comments) {
+        NSString *name = comment.user.name.length > 0 ? comment.user.name : comment.user.uid;
+        NSString *title = [NSString stringWithFormat:@"%@：%@",name ?: @"",comment.content ?: @""];
+        [sheet addAction:[UIAlertAction actionWithTitle:title style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+            [weakSelf showCommentActions:comment post:post];
+        }]];
+    }
+    [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"新增评论") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [weakSelf inputComment:post reply:nil];
+    }]];
+    [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:nil]];
+    [self presentViewController:sheet animated:YES completion:nil];
+}
+
+-(void)showCommentActions:(WKMomentComment*)comment post:(WKMomentPost*)post {
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:comment.content message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    __weak typeof(self) weakSelf = self;
+    [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"回复") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        [weakSelf inputComment:post reply:comment];
+    }]];
+    if(comment.canDelete) {
+        [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"删除") style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+            [weakSelf deleteComment:comment post:post];
+        }]];
+    }
+    [sheet addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:nil]];
+    [self presentViewController:sheet animated:YES completion:nil];
+}
+
+-(void)deleteComment:(WKMomentComment*)comment post:(WKMomentPost*)post {
+    [self.vm deleteComment:post.postId commentId:comment.commentId].then(^{
+        [self refresh];
     }).catch(^(NSError *error) {
         [self.view showHUDWithHide:error.domain];
     });
+}
+
+-(void)deletePost:(WKMomentPost*)post {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LLang(@"删除动态") message:LLang(@"确定删除这条动态吗？") preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"取消") style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:LLang(@"删除") style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        [self.vm deletePost:post.postId].then(^{
+            [self.posts removeObject:post];
+            [self.tableView reloadData];
+        }).catch(^(NSError *error) {
+            [self.view showHUDWithHide:error.domain];
+        });
+    }]];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 #pragma mark - UITableView
@@ -1188,6 +1304,9 @@ static UIImage *WKMomentMenuIconImage(NSString *name) {
     };
     cell.onAvatarTap = ^(WKMomentPost *post) {
         [weakSelf openUserTimelineWithActor:post.user];
+    };
+    cell.onCommentsTap = ^(WKMomentPost *post) {
+        [weakSelf showCommentOptions:post];
     };
     return cell;
 }
