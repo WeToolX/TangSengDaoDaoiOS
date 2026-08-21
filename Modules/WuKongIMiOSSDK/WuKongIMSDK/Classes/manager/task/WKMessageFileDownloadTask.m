@@ -18,7 +18,13 @@
 }
 
 - (NSString *)taskId {
-    return  [NSString stringWithFormat:@"%u",self.message.clientSeq];
+    if(self.message.clientSeq > 0) {
+        return [NSString stringWithFormat:@"%u",self.message.clientSeq];
+    }
+    if(self.message.clientMsgNo.length > 0) {
+        return [NSString stringWithFormat:@"message_%@",self.message.clientMsgNo];
+    }
+    return [NSString stringWithFormat:@"message_%llu",self.message.messageId];
 }
 
 

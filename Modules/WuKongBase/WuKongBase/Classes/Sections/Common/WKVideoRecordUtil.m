@@ -16,11 +16,7 @@
     UIViewController *vc = [[WKNavigationManager shared] topViewController];
     
     [[WKPhotoBrowser shared] takePhoto:vc doneBlock:^(UIImage * _Nonnull img, NSURL * _Nonnull videoURL) {
-        if(img) {
-            if(imgCallback) {
-                imgCallback(img);
-            }
-        }else if(videoURL) {
+        if(videoURL) {
             if(callback) {
                 dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
                     AVURLAsset *asset = [[AVURLAsset alloc] initWithURL:videoURL options:nil];
@@ -39,6 +35,8 @@
                     });
                 });
             }
+        }else if(img && imgCallback) {
+            imgCallback(img);
         }
     } cancelBlock:^{
         

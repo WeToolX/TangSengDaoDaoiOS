@@ -48,6 +48,9 @@
                 case WK_IMAGE:
                     modelCls = WKMergeForwardDetailImageModel.class;
                     break;
+                case WK_VOICE:
+                    modelCls = WKMergeForwardDetailVoiceModel.class;
+                    break;
                 default:
                     modelCls = [WKApp.shared.endpointManager mergeForwardItem:message.contentType];
                     if(!modelCls) {

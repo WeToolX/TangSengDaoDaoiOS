@@ -218,7 +218,7 @@ static WKPhotoBrowser *_instance;
                 [topView showHUD:LLang(@"压缩中")];
                 [self exportVideo:url completion:^(NSString * _Nonnull filePath) {
                     [topView hideHud];
-                    doneBlock(image,[NSURL URLWithString:filePath]);
+                    doneBlock(image, filePath.length > 0 ? [NSURL URLWithString:filePath] : url);
                 }];
             }else {
                 doneBlock(image,nil);

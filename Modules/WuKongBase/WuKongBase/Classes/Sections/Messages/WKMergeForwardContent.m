@@ -35,8 +35,18 @@
     NSArray<NSDictionary*> *msgDicts = contentDic[@"msgs"];
     NSMutableArray<WKMessage*> *messages = [NSMutableArray array];
     if(msgDicts && msgDicts.count>0) {
-        for (NSDictionary *msgDict in msgDicts) {
-            [messages addObject:[WKMessageUtil toMessage:msgDict]];
+        for (NSInteger index = 0; index < msgDicts.count; index++) {
+            WKMessage *message = [WKMessageUtil toMessage:msgDicts[index]];
+            // 兼容旧版合并消息：旧数据没有媒体本地缓存所需的频道和客户端消息号。
+            if (message.channel.channelType == 0 || message.channel.channelId.length == 0) {
+                message.channel = [WKChannel channelID:@"merge_forward" channelType:WK_PERSON];
+            }
+            if (message.clientMsgNo.length == 0) {
+                message.clientMsgNo = message.messageId > 0
+                    ? [NSString stringWithFormat:@"merge_%llu", message.messageId]
+                    : [NSString stringWithFormat:@"merge_%ld", (long)index];
+            }
+            [messages addObject:message];
         }
     }
     self.msgs = messages;
@@ -87,8 +97,11 @@
 -(NSDictionary*) messageToDict:(WKMessage*)message {
     NSMutableDictionary *messageDict = [NSMutableDictionary dictionary];
     messageDict[@"message_id"] = [NSString stringWithFormat:@"%llu",message.messageId];
+    messageDict[@"client_msg_no"] = message.clientMsgNo ?: @"";
     messageDict[@"timestamp"] = @(message.timestamp);
     messageDict[@"from_uid"] = message.fromUid?:@"";
+    messageDict[@"channel_id"] = message.channel.channelId ?: @"";
+    messageDict[@"channel_type"] = @(message.channel.channelType);
     messageDict[@"payload"] = message.content.contentDict;
     return messageDict;
 }

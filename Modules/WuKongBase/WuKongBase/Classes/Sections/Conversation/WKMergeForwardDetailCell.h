@@ -35,6 +35,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+//----------语音cell ----------
+
+@interface WKMergeForwardDetailVoiceModel : WKMergeForwardDetailModel
+
+@end
+
 //---------- 文本cell ----------
 
 @interface WKMergeForwardDetailTextModel : WKMergeForwardDetailModel

@@ -170,6 +170,10 @@
     
     NSString *storePath = [self getTaskStorePath:data.downloadTask];
     if(!storePath) {
+        if (data.videoAVAsset) {
+            self.videoView.asset = data.videoAVAsset;
+            self.videoView.needAutoPlay = YES;
+        }
         return;
     }
     if([WKFileUtil fileIsExistOfPath:storePath]) {

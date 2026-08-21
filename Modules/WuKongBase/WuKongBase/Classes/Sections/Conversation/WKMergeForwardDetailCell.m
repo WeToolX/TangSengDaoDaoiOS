@@ -16,6 +16,29 @@
 #import "WKDefaultWebImageMediator.h"
 #import "WKBrowserToolbar.h"
 #import "UIImageView+WK.h"
+#import "WKVoiceMessageCell.h"
+
+@class WKMergeForwardDetailVoiceCell;
+
+@interface WKMergeForwardDetailVoiceContext : NSObject <WKConversationContext>
+
+@property(nonatomic,strong) NSHashTable<WKMergeForwardDetailVoiceCell *> *cells;
+
++ (instancetype)sharedContext;
+- (void)registerCell:(WKMergeForwardDetailVoiceCell *)cell;
+
+@end
+
+@interface WKMergeForwardDetailVoiceCell : WKVoiceMessageCell
+
+@property(nonatomic,strong) UIImageView *senderAvatarView;
+@property(nonatomic,strong) UILabel *senderNameLabel;
+@property(nonatomic,strong) UILabel *senderTimeLabel;
+@property(nonatomic,strong) WKMergeForwardDetailVoiceContext *voiceContext;
+
+- (void)refreshMessageModel:(WKMessageModel *)messageModel;
+
+@end
 
 @interface WKMergeForwardDetailHeaderView ()
 
@@ -233,6 +256,176 @@
         [_messageContentView setBackgroundColor:[UIColor clearColor]];
     }
     return _messageContentView;
+}
+
+@end
+
+
+//----------语音cell ----------
+
+@implementation WKMergeForwardDetailVoiceModel
+
+- (Class)cell {
+    return WKMergeForwardDetailVoiceCell.class;
+}
+
+@end
+
+@implementation WKMergeForwardDetailVoiceCell
+
++ (NSString *)cellId {
+    return NSStringFromClass(self);
+}
+
++ (CGSize)sizeForModel:(WKFormItemModel *)model {
+    WKMessage *message = ((WKMergeForwardDetailModel *)model).message;
+    if(!message) {
+        return CGSizeMake(WKScreenWidth, 0.0f);
+    }
+    CGSize voiceSize = [self sizeForMessage:[[WKMessageModel alloc] initWithMessage:message]];
+    return CGSizeMake(WKScreenWidth, voiceSize.height + 15.0f + 17.0f + 8.0f + 10.0f);
+}
+
+- (void)initUI {
+    [super initUI];
+    self.avatarImgView.hidden = YES;
+    self.nameLbl.hidden = YES;
+    self.voiceContext = [WKMergeForwardDetailVoiceContext sharedContext];
+    [self.voiceContext registerCell:self];
+    self.conversationContext = self.voiceContext;
+    [self.contentView addSubview:self.senderAvatarView];
+    [self.contentView addSubview:self.senderNameLabel];
+    [self.contentView addSubview:self.senderTimeLabel];
+}
+
+- (void)refresh:(id)model {
+    if([model isKindOfClass:WKMessageModel.class]) {
+        [self refreshMessageModel:model];
+        return;
+    }
+    WKMergeForwardDetailModel *detailModel = (WKMergeForwardDetailModel *)model;
+    if(detailModel.message) {
+        [self refreshMessageModel:[[WKMessageModel alloc] initWithMessage:detailModel.message]];
+        self.senderAvatarView.hidden = detailModel.hideAvatar;
+        [self.senderAvatarView lim_setImageWithURL:[NSURL URLWithString:[WKAvatarUtil getAvatar:detailModel.message.fromUid]] placeholderImage:[WKApp shared].config.defaultAvatar];
+        self.senderNameLabel.text = detailModel.message.from.displayName ?: detailModel.message.fromUid;
+        self.senderTimeLabel.text = [WKTimeTool getTimeStringAutoShort2:[NSDate dateWithTimeIntervalSince1970:detailModel.message.timestamp] mustIncludeTime:YES];
+        [self.senderTimeLabel sizeToFit];
+    }
+}
+
+- (void)refreshMessageModel:(WKMessageModel *)messageModel {
+    [super refresh:messageModel];
+    [self setNeedsLayout];
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+
+    CGFloat headerHeight = 15.0f + 17.0f + 8.0f;
+    self.bubbleBackgroundView.lim_top += headerHeight;
+    self.senderAvatarView.lim_top = 15.0f;
+    self.senderAvatarView.lim_left = 15.0f;
+    self.senderNameLabel.lim_top = 17.0f;
+    self.senderNameLabel.lim_left = self.senderAvatarView.lim_right + 5.0f;
+    self.senderNameLabel.lim_width = self.lim_width - self.senderNameLabel.lim_left - self.senderTimeLabel.lim_width - 20.0f;
+    self.senderNameLabel.lim_height = 17.0f;
+    self.senderTimeLabel.lim_top = 19.0f;
+    self.senderTimeLabel.lim_left = self.lim_width - self.senderTimeLabel.lim_width - 15.0f;
+}
+
+- (UIImageView *)senderAvatarView {
+    if(!_senderAvatarView) {
+        _senderAvatarView = [[UIImageView alloc] initWithFrame:CGRectMake(0.0f, 0.0f, [WKApp shared].config.messageAvatarSize.width, [WKApp shared].config.messageAvatarSize.height)];
+        _senderAvatarView.layer.masksToBounds = YES;
+        _senderAvatarView.layer.cornerRadius = _senderAvatarView.lim_height / 2.0f;
+    }
+    return _senderAvatarView;
+}
+
+- (UILabel *)senderNameLabel {
+    if(!_senderNameLabel) {
+        _senderNameLabel = [[UILabel alloc] init];
+        _senderNameLabel.font = [[WKApp shared].config appFontOfSize:15.0f];
+        _senderNameLabel.textColor = [UIColor grayColor];
+    }
+    return _senderNameLabel;
+}
+
+- (UILabel *)senderTimeLabel {
+    if(!_senderTimeLabel) {
+        _senderTimeLabel = [[UILabel alloc] init];
+        _senderTimeLabel.font = [[WKApp shared].config appFontOfSize:12.0f];
+        _senderTimeLabel.textColor = [WKApp shared].config.tipColor;
+    }
+    return _senderTimeLabel;
+}
+
+@end
+
+@implementation WKMergeForwardDetailVoiceContext
+
++ (instancetype)sharedContext {
+    static WKMergeForwardDetailVoiceContext *context;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        context = [WKMergeForwardDetailVoiceContext new];
+    });
+    return context;
+}
+
+- (instancetype)init {
+    if(self = [super init]) {
+        _cells = [NSHashTable weakObjectsHashTable];
+    }
+    return self;
+}
+
+- (void)registerCell:(WKMergeForwardDetailVoiceCell *)cell {
+    [self.cells addObject:cell];
+}
+
+- (BOOL)isFuncGroupZooming {
+    return NO;
+}
+
+- (void)stopFuncGroupZoom {
+}
+
+- (void)longPressMessageCell:(WKMessageCell *)messageCell gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer {
+}
+
+- (void)addMention:(NSString *)uid {
+}
+
+- (void)endEditing {
+}
+
+- (NSArray<WKMessageModel *> *)getMessagesWithContentType:(NSInteger)contentType {
+    if(contentType != WK_VOICE) {
+        return @[];
+    }
+    NSMutableArray<WKMessageModel *> *messages = [NSMutableArray array];
+    for(WKMergeForwardDetailVoiceCell *cell in self.cells.allObjects) {
+        if(cell.messageModel) {
+            [messages addObject:cell.messageModel];
+        }
+    }
+    return messages;
+}
+
+- (void)refreshCell:(WKMessageModel *)messageModel {
+    for(WKMergeForwardDetailVoiceCell *cell in self.cells.allObjects) {
+        WKMessageModel *currentModel = cell.messageModel;
+        BOOL sameMessage = currentModel.message.messageId == messageModel.message.messageId;
+        if(!sameMessage && currentModel.message.clientMsgNo.length > 0) {
+            sameMessage = [currentModel.message.clientMsgNo isEqualToString:messageModel.message.clientMsgNo];
+        }
+        if(sameMessage) {
+            [cell refreshMessageModel:messageModel];
+            break;
+        }
+    }
 }
 
 @end
@@ -500,7 +693,6 @@
 
 - (void)refresh:(WKMergeForwardDetailTextModel *)model {
     [super refresh:model];
-    
     NSString *conversationDigest = [model.message.content conversationDigest];
     if(conversationDigest && ![conversationDigest isEqualToString:@""]) {
         self.textLbl.text = conversationDigest;

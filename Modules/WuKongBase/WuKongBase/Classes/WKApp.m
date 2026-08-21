@@ -1520,6 +1520,7 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
     [[WKApp shared] addMessageAllowForward:WK_TEXT];
     [[WKApp shared] addMessageAllowForward:WK_IMAGE];
     [[WKApp shared] addMessageAllowForward:WK_GIF];
+    [[WKApp shared] addMessageAllowForward:WK_VOICE];
     [[WKApp shared] addMessageAllowForward:WK_SMALLVIDEO];
     [self setMethod:WKPOINT_LONGMENUS_FORWARD handler:^id _Nullable(id  _Nonnull param) {
         WKMessageModel *message = param[@"message"];
