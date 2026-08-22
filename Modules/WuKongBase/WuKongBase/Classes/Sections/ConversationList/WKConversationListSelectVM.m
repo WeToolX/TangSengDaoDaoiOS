@@ -11,7 +11,7 @@
 @interface WKConversationListSelectVM ()
 @property(nonatomic,strong)  NSArray<WKConversationWrapModel*> *conversationWrapModels;
 
-@property(nonatomic,strong) NSMutableArray<WKChannel*> *selectedChannels;
+@property(nonatomic,strong) NSMutableArray<WKChannel*> *mutableSelectedChannels;
 @end
 
 @implementation WKConversationListSelectVM
@@ -30,7 +30,7 @@
             }else {
                 [conversation startChannelRequest];
             }
-           bool selected = [weakSelf.selectedChannels containsObject:conversation.channel];
+           bool selected = [weakSelf.mutableSelectedChannels containsObject:conversation.channel];
             [items addObject:@{
                 @"class": WKConversationListSelectModel.class,
                 @"title":title?:@"",
@@ -45,13 +45,16 @@
                         return;
                     }
                     if(weakSelf.multiple) {
-                        if([weakSelf.selectedChannels containsObject:conversation.channel]) {
-                            [weakSelf.selectedChannels removeObject:conversation.channel];
+                        if([weakSelf.mutableSelectedChannels containsObject:conversation.channel]) {
+                            [weakSelf.mutableSelectedChannels removeObject:conversation.channel];
                         }else {
-                            [weakSelf.selectedChannels addObject:conversation.channel];
+                            [weakSelf.mutableSelectedChannels addObject:conversation.channel];
                             
                         }
                         [weakSelf reloadData];
+                        if(weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(conversationListSelectVM:didChangeSelection:)]) {
+                            [weakSelf.delegate conversationListSelectVM:weakSelf didChangeSelection:weakSelf.mutableSelectedChannels];
+                        }
                     }else {
                         if(weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(conversationListSelectVM:didSelected:)]) {
                             [weakSelf.delegate conversationListSelectVM:weakSelf didSelected:@[conversation.channel]];
@@ -91,11 +94,11 @@
     ];
 }
 
-- (NSMutableArray<WKChannel *> *)selectedChannels {
-    if(!_selectedChannels) {
-        _selectedChannels = [NSMutableArray array];
+- (NSMutableArray<WKChannel *> *)mutableSelectedChannels {
+    if(!_mutableSelectedChannels) {
+        _mutableSelectedChannels = [NSMutableArray array];
     }
-    return _selectedChannels;
+    return _mutableSelectedChannels;
 }
 
 // 是否允许被选中
@@ -142,6 +145,36 @@
         }
         return NSOrderedAscending;
     }];
+}
+
+- (NSArray<WKChannel *> *)selectedChannels {
+    return [self.mutableSelectedChannels copy];
+}
+
+- (void)toggleSelectAll {
+    BOOL allSelected = [self isAllSelected];
+    [self.mutableSelectedChannels removeAllObjects];
+    if(!allSelected) {
+        for(WKConversationWrapModel *conversation in self.conversationWrapModels) {
+            if([self allowSelected:conversation.channelInfo]) {
+                [self.mutableSelectedChannels addObject:conversation.channel];
+            }
+        }
+    }
+    [self reloadData];
+    if(self.delegate && [self.delegate respondsToSelector:@selector(conversationListSelectVM:didChangeSelection:)]) {
+        [self.delegate conversationListSelectVM:self didChangeSelection:self.mutableSelectedChannels];
+    }
+}
+
+- (BOOL)isAllSelected {
+    NSInteger availableCount = 0;
+    for(WKConversationWrapModel *conversation in self.conversationWrapModels) {
+        if([self allowSelected:conversation.channelInfo]) {
+            availableCount++;
+        }
+    }
+    return availableCount > 0 && self.mutableSelectedChannels.count == availableCount;
 }
 
 @end

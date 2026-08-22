@@ -17,6 +17,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property(nonatomic,copy) void(^onSelect)(WKChannel*channel);
 
+/**
+ 多选完成
+ */
+@property(nonatomic,copy) void(^onSelectChannels)(NSArray<WKChannel*> *channels);
+
+/// 是否允许多选
+@property(nonatomic,assign) BOOL multiple;
+
 @end
 
 

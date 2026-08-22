@@ -1531,18 +1531,18 @@ static  UIBackgroundTaskIdentifier _bgTaskToken;
         UIImage *icon = [GenerateImageUtils generateTintedImgWithImage:[weakSelf imageName:@"Conversation/ContextMenu/Forward"] color:weakSelf.config.contextMenu.primaryColor backgroundColor:nil];
         return [WKMessageLongMenusItem initWithTitle:LLangW(@"转发", weakSelf) icon:icon onTap:^(id<WKConversationContext> context){
             WKConversationListSelectVC *vc = [WKConversationListSelectVC new];
-            vc.title = LLangW(@"选择一个聊天", weakSelf);
-            [vc setOnSelect:^(WKChannel * _Nonnull channel) {
+            vc.title = LLangW(@"选择分享对象", weakSelf);
+            vc.multiple = YES;
+            [vc setOnSelectChannels:^(NSArray<WKChannel *> * _Nonnull channels) {
                 [[WKNavigationManager shared] popToViewControllerClass:WKConversationVC.class animated:YES];
-                if([channel isEqual:context.channel]) {
-                    [context forwardMessage:message.content];
-                }else{
-                    [[WKSDK shared].chatManager forwardMessage:message.content channel:channel];
-                   [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLangW(@"发送成功",weakSelf)];
+                for(WKChannel *channel in channels) {
+                    if([channel isEqual:context.channel]) {
+                        [context forwardMessage:message.content];
+                    }else{
+                        [[WKSDK shared].chatManager forwardMessage:message.content channel:channel];
+                    }
                 }
-               
-                
-                
+                [[WKNavigationManager shared].topViewController.view showHUDWithHide:LLangW(@"发送成功",weakSelf)];
             }];
             [[WKNavigationManager shared] pushViewController:vc animated:YES];
         }];
